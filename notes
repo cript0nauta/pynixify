@@ -1,0 +1,12 @@
+packaging module: https://packaging.pypa.io/en/latest/version/
+útil para parsear requirements
+
+https://warehouse.pypa.io/api-reference/json/
+PyPI JSON API docs
+
+https://setuptools.readthedocs.io/en/latest/formats.html#requires-txt
+requires.txt (not requirements.txt) egg info file docs
+
+https://setuptools.readthedocs.io/en/latest/pkg_resources.html
+pkg_resources docs
+useful functions: split_sections, parse_requirements
