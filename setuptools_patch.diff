@@ -1,0 +1,33 @@
+diff --git a/setuptools/__init__.py b/setuptools/__init__.py
+index a71b2bbd..1d48508e 100644
+--- a/setuptools/__init__.py
++++ b/setuptools/__init__.py
+@@ -140,9 +140,25 @@ def _install_setup_requires(attrs):
+ 
+ 
+ def setup(**attrs):
+-    # Make sure we have any requirements needed to interpret 'attrs'.
+-    _install_setup_requires(attrs)
+-    return distutils.core.setup(**attrs)
++    if 'PYPI2NIXKPGS' in os.environ:
++        from pathlib import Path
++        try:
++            out = Path(os.environ['out'])
++        except KeyError:
++            print("out environment variable not defined")
++            sys.exit(1)
++        targets = [
++            ('setup_requires.txt', attrs['setup_requires']),
++            ('install_requires.txt', attrs['install_requires']),
++            ('tests_requires.txt', attrs['tests_require']),
++        ]
++        for (filename, requirements) in targets:
++            with (out / filename).open("w") as fp:
++                fp.write('\n'.join(requirements))
++    else:
++        # Make sure we have any requirements needed to interpret 'attrs'.
++        _install_setup_requires(attrs)
++        return distutils.core.setup(**attrs)
+ 
+ setup.__doc__ = distutils.core.setup.__doc__
+ 
