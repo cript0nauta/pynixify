@@ -12,7 +12,7 @@ class PyDerivation:
 
 class NixpkgsData:
     def __init__(self, data):
-        self.__data = data
+        self.__data = {canonicalize_name(k): v for (k, v) in data.items()}
 
     def from_pypi_name(self, name: str) -> Sequence[PyDerivation]:
         try:

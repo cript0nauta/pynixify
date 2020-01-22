@@ -19,7 +19,7 @@ ZSTD_DATA = {
 
 
 PYTESTRUNNER_DATA = {
-    "pytest-runner": [{
+    "pyTEST-runner": [{
         "attr": "pytestrunner",
         "pypiName": "pytest-runner",
         "src": "mirror://pypi/p/pytest-runner/pytest-runner-5.1.tar.gz",
