@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
+from pypi2nixpkgs.exceptions import PackageNotFound
 
 @dataclass
 class PyDerivation:
@@ -26,8 +27,4 @@ class NixpkgsData:
 
     def from_requirement(self, req: Requirement) -> Sequence[PyDerivation]:
         drvs = self.from_pypi_name(req.name)
-        return [drv for drv in drvs if drv.version in req.specifier]
-
-
-class PackageNotFound(Exception):
-    pass
+        return [drv for drv in drvs if str(drv.version) in req.specifier]
