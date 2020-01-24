@@ -1,8 +1,13 @@
+import hashlib
 from typing import Sequence
+from pathlib import Path
 from dataclasses import dataclass
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
+from pypi2nixpkgs.exceptions import (
+    IntegrityError
+)
 
 
 @dataclass
@@ -10,6 +15,23 @@ class PyPIPackage:
     version: Version
     sha256: str
     download_url: str
+    pypi_cache: object
+
+    async def download_source(self) -> Path:
+        downloaded_file: Path = await self.pypi_cache.fetch_url(self.download_url)
+        h = hashlib.sha256()
+        with downloaded_file.open('rb') as fp:
+            while True:
+                data = fp.read(65536)
+                if not data:
+                    break
+                h.update(data)
+        if h.hexdigest() != self.sha256:
+            raise IntegrityError(
+                f"SHA256 hash does not match. The hash of {self.download_url} "
+                f"should be {self.sha256} but it is {h.hexdigest()} instead."
+            )
+        return downloaded_file
 
 
 class PyPIData:
@@ -29,5 +51,6 @@ class PyPIData:
                     sha256=data['digests']['sha256'],
                     version=parse(version),
                     download_url=data['url'],
+                    pypi_cache=self.pypi_cache,
                 ))
         return matching

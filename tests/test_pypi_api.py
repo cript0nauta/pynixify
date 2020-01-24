@@ -3,9 +3,14 @@ import pytest
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
-from pypi2nixpkgs.exceptions import PackageNotFound
+from packaging.version import Version
+from pypi2nixpkgs.exceptions import (
+    PackageNotFound,
+    IntegrityError,
+)
 from pypi2nixpkgs.pypi_api import (
-    PyPIData
+    PyPIData,
+    PyPIPackage,
 )
 
 class DummyCache:
@@ -20,6 +25,7 @@ class DummyCache:
             return self.data[package]
         except KeyError:
             raise PackageNotFound()
+
 
 with (Path(__file__).parent / "sampleproject_response.json").open() as fp:
     SAMPLEPROJECT_DATA = json.load(fp)
@@ -46,3 +52,32 @@ async def test_invalid_package():
     with pytest.raises(PackageNotFound):
         await data.from_requirement(Requirement('xxx==1.3.1'))
 
+@pytest.mark.asyncio
+async def test_fetch_blob():
+    class Cache(DummyCache):
+        async def fetch_url(self, url) -> Path:
+            return Path(__file__).parent / "sampleproject_response.json"
+
+    p = PyPIPackage(
+        version=Version("1.3.1"),
+        sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
+        download_url='http://mockme',
+        pypi_cache=Cache(sampleproject=SAMPLEPROJECT_DATA),
+    )
+    filename = await p.download_source()
+    assert filename.exists()
+
+@pytest.mark.asyncio
+async def test_fetch_blob_fails():
+    class Cache(DummyCache):
+        async def fetch_url(self, url) -> Path:
+            return Path('/dev/null')
+
+    p = PyPIPackage(
+        version=Version("1.3.1"),
+        sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
+        download_url='http://mockme',
+        pypi_cache=Cache(sampleproject=SAMPLEPROJECT_DATA),
+    )
+    with pytest.raises(IntegrityError):
+        await p.download_source()
