@@ -6,5 +6,6 @@ setup(
     packages=['pypi2nixpkgs',],
     license='GPLv3+',
     # long_description=open('README.txt').read(),
-    tests_require=['pytest'],
+    tests_require=['pytest', 'pytest-asyncio'],
+    install_requires=['aiohttp<4.0.0'],
 )
