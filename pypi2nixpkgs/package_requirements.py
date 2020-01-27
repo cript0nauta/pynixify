@@ -1,27 +1,20 @@
-import shlex
-import asyncio
 from pathlib import Path
 from typing import Sequence
 from dataclasses import dataclass
 from packaging.requirements import Requirement
 from pkg_resources import parse_requirements
+from pypi2nixpkgs.nixpkgs_sources import run_nix_build
 
 async def eval_package_requirements(package: Path):
     nix_expression_path = Path('__file__').parent.parent / "parse_setuppy_data.nix"
     assert nix_expression_path.exists()
-    args = [
+    nix_store_path = await run_nix_build(
         str(nix_expression_path),
         '--no-out-link',
         '--arg',
         'file',
-        str(package.absolute()),
-    ]
-    proc = await asyncio.create_subprocess_exec(
-        'nix-build', *args, stdout=asyncio.subprocess.PIPE)
-    status = await proc.wait()
-    assert status == 0
-    (stdout, _) = await proc.communicate()
-    nix_store_path = Path(stdout.strip().decode())
+        str(package.absolute())
+    )
     return PackageRequirements(nix_store_path)
 
 

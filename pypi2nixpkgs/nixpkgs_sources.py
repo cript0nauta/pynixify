@@ -1,3 +1,5 @@
+import asyncio
+from pathlib import Path
 from typing import Sequence
 from dataclasses import dataclass
 from packaging.utils import canonicalize_name
@@ -28,3 +30,12 @@ class NixpkgsData:
     def from_requirement(self, req: Requirement) -> Sequence[PyDerivation]:
         drvs = self.from_pypi_name(req.name)
         return [drv for drv in drvs if str(drv.version) in req.specifier]
+
+
+async def run_nix_build(*args: Sequence[str]) -> Path:
+    proc = await asyncio.create_subprocess_exec(
+        'nix-build', *args, stdout=asyncio.subprocess.PIPE)
+    status = await proc.wait()
+    assert status == 0
+    (stdout, _) = await proc.communicate()
+    return Path(stdout.strip().decode())
