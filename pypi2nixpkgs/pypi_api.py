@@ -5,7 +5,7 @@ import aiofiles
 from typing import Sequence
 from pathlib import Path
 from dataclasses import dataclass
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
@@ -22,7 +22,12 @@ class PyPIPackage:
     pypi_cache: object
 
     async def download_source(self) -> Path:
-        downloaded_file: Path = await self.pypi_cache.fetch_url(self.download_url)
+        filename = tempfile.mktemp(
+            prefix='pypi2nixpkgs_download',
+            suffix=self.filename,
+        )
+        downloaded_file: Path = await self.pypi_cache.fetch_url(
+            self.download_url, filename)
         h = hashlib.sha256()
         with downloaded_file.open('rb') as fp:
             while True:
@@ -36,6 +41,10 @@ class PyPIPackage:
                 f"should be {self.sha256} but it is {h.hexdigest()} instead."
             )
         return downloaded_file
+
+    @property
+    def filename(self):
+        return Path(urlparse(self.download_url).path).name
 
 
 class PyPIData:
@@ -67,10 +76,9 @@ class PyPICache:
             async with session.get(url) as response:
                 return await response.json()
 
-    async def fetch_url(self, url):
+    async def fetch_url(self, url, filename):
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             async with session.get(url) as response:
-                filename = tempfile.mktemp(prefix='pypi2nixpkgs_download')
                 async with aiofiles.open(filename, 'wb') as fp:
                     while True:
                         data = await response.content.read(65535)

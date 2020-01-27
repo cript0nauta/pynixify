@@ -55,7 +55,7 @@ async def test_invalid_package():
 @pytest.mark.asyncio
 async def test_fetch_blob():
     class Cache(DummyCache):
-        async def fetch_url(self, url) -> Path:
+        async def fetch_url(self, url, filename) -> Path:
             return Path(__file__).parent / "sampleproject_response.json"
 
     p = PyPIPackage(
@@ -70,7 +70,7 @@ async def test_fetch_blob():
 @pytest.mark.asyncio
 async def test_fetch_blob_fails():
     class Cache(DummyCache):
-        async def fetch_url(self, url) -> Path:
+        async def fetch_url(self, url, filename) -> Path:
             return Path('/dev/null')
 
     p = PyPIPackage(
@@ -81,3 +81,13 @@ async def test_fetch_blob_fails():
     )
     with pytest.raises(IntegrityError):
         await p.download_source()
+
+
+def test_package_filename():
+    p = PyPIPackage(
+        version=Version("1.3.1"),
+        sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
+        download_url='https://files.pythonhosted.org/packages/7f/7b/7627af71aaf127014238040b78ad8eaf416facda3d0755af69f382399c36/faraday_agent_dispatcher-1.0.tar.gz',
+        pypi_cache=None,
+    )
+    assert p.filename == 'faraday_agent_dispatcher-1.0.tar.gz'
