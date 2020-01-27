@@ -1,3 +1,4 @@
+import json
 import asyncio
 from pathlib import Path
 from typing import Sequence
@@ -11,6 +12,16 @@ from pypi2nixpkgs.exceptions import PackageNotFound
 class PyDerivation:
     attr: str
     version: Version
+
+    async def build_source(self, extra_args=[]):
+        args = [
+            '--no-out-link',
+            '<nixpkgs>',
+            '-A',
+            f'python37Packages."{self.attr}".src',
+        ]
+        args += extra_args
+        return await run_nix_build(*args)
 
 
 class NixpkgsData:
@@ -32,10 +43,28 @@ class NixpkgsData:
         return [drv for drv in drvs if str(drv.version) in req.specifier]
 
 
+async def load_nixpkgs_data(extra_args):
+    nix_expression_path = Path(__file__).parent.parent / "pythonPackages.nix"
+    args = [
+        '--eval',
+        '--strict',
+        '--json',
+        str(nix_expression_path),
+    ]
+    args += extra_args
+    proc = await asyncio.create_subprocess_exec(
+        'nix-instantiate', *args, stdout=asyncio.subprocess.PIPE)
+    (stdout, _) = await proc.communicate()
+    status = await proc.wait()
+    assert status == 0
+    ret = json.loads(stdout)
+    return ret
+
+
 async def run_nix_build(*args: Sequence[str]) -> Path:
     proc = await asyncio.create_subprocess_exec(
         'nix-build', *args, stdout=asyncio.subprocess.PIPE)
+    (stdout, _) = await proc.communicate()
     status = await proc.wait()
     assert status == 0
-    (stdout, _) = await proc.communicate()
     return Path(stdout.strip().decode())
