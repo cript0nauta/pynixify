@@ -7,5 +7,5 @@ setup(
     license='GPLv3+',
     # long_description=open('README.txt').read(),
     tests_require=['pytest', 'pytest-asyncio'],
-    install_requires=['aiohttp<4.0.0'],
+    install_requires=['aiohttp<4.0.0', 'aiofiles'],
 )

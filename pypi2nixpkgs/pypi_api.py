@@ -1,7 +1,11 @@
 import hashlib
+import tempfile
+import aiohttp
+import aiofiles
 from typing import Sequence
 from pathlib import Path
 from dataclasses import dataclass
+from urllib.parse import quote
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
@@ -54,3 +58,23 @@ class PyPIData:
                     pypi_cache=self.pypi_cache,
                 ))
         return matching
+
+
+class PyPICache:
+    async def fetch(self, package_name):
+        url = f'https://pypi.org/pypi/{quote(package_name)}/json'
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            async with session.get(url) as response:
+                return await response.json()
+
+    async def fetch_url(self, url):
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            async with session.get(url) as response:
+                filename = tempfile.mktemp(prefix='pypi2nixpkgs_download')
+                async with aiofiles.open(filename, 'wb') as fp:
+                    while True:
+                        data = await response.content.read(65535)
+                        if not data:
+                            break
+                        await fp.write(data)
+                return Path(filename)

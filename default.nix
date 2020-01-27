@@ -5,7 +5,7 @@ python3.pkgs.buildPythonPackage {
   version = "0.1dev";
   src = lib.cleanSource ./.;
   doCheck = true;
-  propagatedBuildInputs = with python3.pkgs; [aiohttp];
+  propagatedBuildInputs = with python3.pkgs; [ aiohttp aiofiles ];
   checkInputs = with python3.pkgs; [ pytest pytest-asyncio ];
   checkPhase = ''
     pytest tests/
