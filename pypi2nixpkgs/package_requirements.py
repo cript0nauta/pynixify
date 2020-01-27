@@ -5,18 +5,6 @@ from packaging.requirements import Requirement
 from pkg_resources import parse_requirements
 from pypi2nixpkgs.nixpkgs_sources import run_nix_build
 
-async def eval_package_requirements(package: Path):
-    nix_expression_path = Path('__file__').parent.parent / "parse_setuppy_data.nix"
-    assert nix_expression_path.exists()
-    nix_store_path = await run_nix_build(
-        str(nix_expression_path),
-        '--no-out-link',
-        '--arg',
-        'file',
-        str(package.absolute())
-    )
-    return PackageRequirements(nix_store_path)
-
 
 @dataclass
 class PackageRequirements:
@@ -35,3 +23,16 @@ class PackageRequirements:
                 # Convert from Requirement.parse to Requirement
                 reqs = [Requirement(str(r)) for r in parse_requirements(fp)]
                 setattr(self, attr, reqs)
+
+
+async def eval_package_requirements(package: Path) -> PackageRequirements:
+    nix_expression_path = Path('__file__').parent.parent / "parse_setuppy_data.nix"
+    assert nix_expression_path.exists()
+    nix_store_path = await run_nix_build(
+        str(nix_expression_path),
+        '--no-out-link',
+        '--arg',
+        'file',
+        str(package.absolute())
+    )
+    return PackageRequirements(nix_store_path)
