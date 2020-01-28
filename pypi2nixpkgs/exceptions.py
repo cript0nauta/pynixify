@@ -6,4 +6,3 @@ class NoMatchingVersionFound(Exception):
 
 class IntegrityError(Exception):
     pass
-
