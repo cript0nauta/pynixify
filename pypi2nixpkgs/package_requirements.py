@@ -25,7 +25,7 @@ class PackageRequirements:
                 setattr(self, attr, reqs)
 
 
-async def eval_package_requirements(package: Path) -> PackageRequirements:
+async def eval_path_requirements(path: Path) -> PackageRequirements:
     nix_expression_path = Path('__file__').parent.parent / "parse_setuppy_data.nix"
     assert nix_expression_path.exists()
     nix_store_path = await run_nix_build(
@@ -33,6 +33,6 @@ async def eval_package_requirements(package: Path) -> PackageRequirements:
         '--no-out-link',
         '--arg',
         'file',
-        str(package.absolute())
+        str(path.absolute())
     )
     return PackageRequirements(nix_store_path)

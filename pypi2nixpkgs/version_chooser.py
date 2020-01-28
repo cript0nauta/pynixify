@@ -4,7 +4,10 @@ from packaging.requirements import Requirement
 from pypi2nixpkgs.base import Package
 from packaging.utils import canonicalize_name
 from pypi2nixpkgs.nixpkgs_sources import NixpkgsData
-from pypi2nixpkgs.package_requirements import PackageRequirements
+from pypi2nixpkgs.package_requirements import (
+    PackageRequirements,
+    eval_path_requirements,
+)
 from pypi2nixpkgs.exceptions import (
     NoMatchingVersionFound,
 )
@@ -43,3 +46,8 @@ class VersionChooser:
 
     def package_for(self, package_name: str) -> Package:
         return self.choosed_packages.get(canonicalize_name(package_name))
+
+async def evaluate_package_requirements(
+        pkg: Package, extra_args=[]) -> PackageRequirements:
+    src = await pkg.source(extra_args)
+    return await eval_path_requirements(src)

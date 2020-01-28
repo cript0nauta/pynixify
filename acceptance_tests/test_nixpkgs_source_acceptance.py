@@ -7,7 +7,11 @@ from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
 )
 from pypi2nixpkgs.package_requirements import (
-    eval_package_requirements,
+    eval_path_requirements,
+)
+from pypi2nixpkgs.version_chooser import (
+    VersionChooser,
+    evaluate_package_requirements,
 )
 
 PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']
@@ -22,7 +26,15 @@ async def test_all():
     assert django.attr == 'django_2_2'
     nix_store_path = await django.source(PINNED_NIXPKGS_ARGS)
     assert nix_store_path == Path('/nix/store/560jpg1ilahfs1j0xw4s0z6fld2a8fq5-Django-2.2.9.tar.gz')
-    reqs = await eval_package_requirements(nix_store_path)
+    reqs = await eval_path_requirements(nix_store_path)
     assert not reqs.build_requirements
     assert not reqs.test_requirements
     assert len(reqs.runtime_requirements) == 2
+
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(repo, f)
+    await c.require(Requirement('flask'))
+    assert str(c.package_for('flask').version) == '1.0.4'
+    assert str(c.package_for('itsdangerous').version) == '1.1.0'
+    assert str(c.package_for('Werkzeug').version) == '0.15.5'
