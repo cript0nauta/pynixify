@@ -9,19 +9,19 @@ from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
+from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.exceptions import (
     IntegrityError
 )
 
 
 @dataclass
-class PyPIPackage:
-    version: Version
+class PyPIPackage(Package):
     sha256: str
     download_url: str
     pypi_cache: object
 
-    async def download_source(self) -> Path:
+    async def source(self) -> Path:
         filename = tempfile.mktemp(
             prefix='pypi2nixpkgs_download',
             suffix=self.filename,

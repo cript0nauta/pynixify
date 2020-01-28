@@ -20,7 +20,7 @@ async def test_all():
     (django, ) = repo.from_requirement(Requirement('django>=2.2'))
     assert django.version == parse('2.2.9')
     assert django.attr == 'django_2_2'
-    nix_store_path = await django.build_source(PINNED_NIXPKGS_ARGS)
+    nix_store_path = await django.source(PINNED_NIXPKGS_ARGS)
     assert nix_store_path == Path('/nix/store/560jpg1ilahfs1j0xw4s0z6fld2a8fq5-Django-2.2.9.tar.gz')
     reqs = await eval_package_requirements(nix_store_path)
     assert not reqs.build_requirements

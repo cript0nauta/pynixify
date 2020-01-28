@@ -64,7 +64,7 @@ async def test_fetch_blob():
         download_url='http://mockme',
         pypi_cache=Cache(sampleproject=SAMPLEPROJECT_DATA),
     )
-    filename = await p.download_source()
+    filename = await p.source()
     assert filename.exists()
 
 @pytest.mark.asyncio
@@ -80,7 +80,7 @@ async def test_fetch_blob_fails():
         pypi_cache=Cache(sampleproject=SAMPLEPROJECT_DATA),
     )
     with pytest.raises(IntegrityError):
-        await p.download_source()
+        await p.source()
 
 
 def test_package_filename():

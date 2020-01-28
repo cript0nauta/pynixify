@@ -6,14 +6,14 @@ from dataclasses import dataclass
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
+from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.exceptions import PackageNotFound
 
 @dataclass
-class PyDerivation:
+class NixPackage(Package):
     attr: str
-    version: Version
 
-    async def build_source(self, extra_args=[]):
+    async def source(self, extra_args=[]):
         args = [
             '--no-out-link',
             '<nixpkgs>',
@@ -28,17 +28,17 @@ class NixpkgsData:
     def __init__(self, data):
         self.__data = {canonicalize_name(k): v for (k, v) in data.items()}
 
-    def from_pypi_name(self, name: str) -> Sequence[PyDerivation]:
+    def from_pypi_name(self, name: str) -> Sequence[NixPackage]:
         try:
             data = self.__data[canonicalize_name(name)]
         except KeyError:
             raise PackageNotFound(f'{name} is not defined in nixpkgs')
         return [
-            PyDerivation(attr=drv['attr'], version=parse(drv['version']))
+            NixPackage(attr=drv['attr'], version=parse(drv['version']))
             for drv in data
         ]
 
-    def from_requirement(self, req: Requirement) -> Sequence[PyDerivation]:
+    def from_requirement(self, req: Requirement) -> Sequence[NixPackage]:
         drvs = self.from_pypi_name(req.name)
         return [drv for drv in drvs if str(drv.version) in req.specifier]
 

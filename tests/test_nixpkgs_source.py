@@ -4,7 +4,7 @@ from packaging.version import Version, parse
 from pypi2nixpkgs.exceptions import PackageNotFound
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
-    PyDerivation,
+    NixPackage,
 )
 
 
@@ -64,7 +64,7 @@ def test_from_pypi_name_response():
     repo = NixpkgsData(PYTESTRUNNER_DATA)
     drvs = repo.from_pypi_name('pytest-runner')
     assert isinstance(drvs, list)
-    assert isinstance(drvs[0], PyDerivation)
+    assert isinstance(drvs[0], NixPackage)
     assert drvs[0].attr == 'pytestrunner'
     assert drvs[0].version == parse('5.1')
 
