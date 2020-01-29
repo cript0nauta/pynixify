@@ -239,3 +239,10 @@ async def test_conflicting_versions():
     assert c.package_for('flask')
     with pytest.raises(NoMatchingVersionFound):
         await c.require(Requirement('click'))
+
+@pytest.mark.asyncio
+async def test_python_version_marker():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements())
+    await c.require(Requirement("flask; python_version<'3'"))
+    assert c.package_for('flask') is None

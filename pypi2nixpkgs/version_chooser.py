@@ -27,6 +27,9 @@ class VersionChooser:
     async def require(self, r: Requirement):
         pkg: Package
 
+        if r.marker and not r.marker.evaluate():
+            return
+
         try:
             (pkg, specifier) = self._choosed_packages[canonicalize_name(r.name)]
         except KeyError:
