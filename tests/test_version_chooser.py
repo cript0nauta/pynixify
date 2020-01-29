@@ -224,3 +224,18 @@ async def test_pypi_dependency_uses_nixpkgs_dependency():
     await c.require(Requirement('sampleproject'))
     assert c.package_for('sampleproject')
     assert c.package_for('flask')
+
+@pytest.mark.asyncio
+async def test_conflicting_versions():
+    data = NIXPKGS_JSON.copy()
+    data.update(NIXPKGS_SAMPLEPROJECT)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    c = VersionChooser(nixpkgs, pypi, dummy_package_requirements({
+        "flask": ([], [], [Requirement('sampleproject==1.0')]),
+        "click": ([], [], [Requirement('sampleproject>1.0')]),
+    }))
+    await c.require(Requirement('flask'))
+    assert c.package_for('flask')
+    with pytest.raises(NoMatchingVersionFound):
+        await c.require(Requirement('click'))

@@ -1,8 +1,9 @@
 import operator
-from typing import Dict, Callable, Awaitable, Optional, List
+from typing import Dict, Callable, Awaitable, Optional, List, Tuple
 from packaging.requirements import Requirement
-from pypi2nixpkgs.base import Package
 from packaging.utils import canonicalize_name
+from packaging.specifiers import SpecifierSet
+from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.nixpkgs_sources import NixpkgsData
 from pypi2nixpkgs.pypi_api import PyPIData
 from pypi2nixpkgs.package_requirements import (
@@ -20,18 +21,20 @@ class VersionChooser:
                  req_evaluate: F_TYPE):
         self.nixpkgs_data = nixpkgs_data
         self.pypi_data = pypi_data
-        self.choosed_packages: Dict[str, Package] = {}
+        self._choosed_packages: Dict[str, Tuple[Package, SpecifierSet]] = {}
         self.evaluate_requirements = req_evaluate
 
     async def require(self, r: Requirement):
         pkg: Package
 
         try:
-            pkg = self.choosed_packages[canonicalize_name(r.name)]
+            (pkg, specifier) = self._choosed_packages[canonicalize_name(r.name)]
         except KeyError:
             pass
         else:
-            if pkg.version not in r.specifier:
+            specifier &= r.specifier
+            self._choosed_packages[canonicalize_name(r.name)] = (pkg, specifier)
+            if pkg.version not in specifier:
                 raise NoMatchingVersionFound(
                     f'{r.name}=={str(pkg.version)} does not match {r}'
                 )
@@ -65,20 +68,22 @@ class VersionChooser:
             raise NoMatchingVersionFound(str(r))
 
         pkg = max(pkgs, key=operator.attrgetter('version'))
-        self.choosed_packages[canonicalize_name(r.name)] = pkg
+        self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
         for req in reqs.runtime_requirements:
-            if canonicalize_name(req.name) in self.choosed_packages:
-                continue
             await self.require(req)
         for req in reqs.test_requirements:
-            if canonicalize_name(req.name) in self.choosed_packages:
+            if canonicalize_name(req.name) in self._choosed_packages:
                 continue
             await self.require(req)
 
     def package_for(self, package_name: str) -> Optional[Package]:
-        return self.choosed_packages.get(canonicalize_name(package_name))
+        try:
+            (pkg, _) = self._choosed_packages[canonicalize_name(package_name)]
+        except KeyError:
+            return None
+        return pkg
 
 async def evaluate_package_requirements(
         pkg: Package, extra_args=[]) -> PackageRequirements:
