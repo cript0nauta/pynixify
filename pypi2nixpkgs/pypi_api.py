@@ -5,6 +5,7 @@ import aiofiles
 from typing import Sequence
 from pathlib import Path
 from dataclasses import dataclass
+from abc import ABCMeta, abstractmethod
 from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
@@ -15,13 +16,23 @@ from pypi2nixpkgs.exceptions import (
 )
 
 
+class ABCPyPICache(metaclass=ABCMeta):
+    @abstractmethod
+    async def fetch(self, package_name: str) -> object:
+        pass
+
+    @abstractmethod
+    async def fetch_url(self, url: str, filename: str) -> Path:
+        pass
+
+
 @dataclass
 class PyPIPackage(Package):
     sha256: str
     download_url: str
-    pypi_cache: object
+    pypi_cache: ABCPyPICache
 
-    async def source(self) -> Path:
+    async def source(self, extra_args=[]) -> Path:
         filename = tempfile.mktemp(
             prefix='pypi2nixpkgs_download',
             suffix=self.filename,

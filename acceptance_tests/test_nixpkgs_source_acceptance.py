@@ -13,6 +13,7 @@ from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     evaluate_package_requirements,
 )
+from tests.test_version_chooser import assert_version
 
 PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']
 
@@ -35,6 +36,6 @@ async def test_all():
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(repo, f)
     await c.require(Requirement('flask'))
-    assert str(c.package_for('flask').version) == '1.0.4'
-    assert str(c.package_for('itsdangerous').version) == '1.1.0'
-    assert str(c.package_for('Werkzeug').version) == '0.15.5'
+    assert_version(c, 'flask', '1.0.4')
+    assert_version(c, 'itsdangerous', '1.1.0')
+    assert_version(c, 'Werkzeug', '0.15.5')

@@ -6,6 +6,7 @@ from packaging.requirements import Requirement
 from pypi2nixpkgs.package_requirements import PackageRequirements
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
+    NixPackage,
 )
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
@@ -45,7 +46,10 @@ def dummy_package_requirements(hardcoded_reqs={}):
         nonlocal hardcoded_reqs
         # Don't use the data inside the result file, just use it to prevent
         # PackageRequirements.__init__ from failing
-        (b, t, r) = hardcoded_reqs.get(package.attr, ([], [], []))
+        if isinstance(package, NixPackage):
+            (b, t, r) = hardcoded_reqs.get(package.attr, ([], [], []))
+        else:
+            (b, t, r) = ([], [], [])
         reqs = PackageRequirements(
             Path(__file__).parent / "parse_setuppy_data_result")
         reqs.build_requirements = b
@@ -53,6 +57,12 @@ def dummy_package_requirements(hardcoded_reqs={}):
         reqs.runtime_requirements = r
         return reqs
     return f
+
+
+def assert_version(c: VersionChooser, package_name: str, version: str):
+    p = c.package_for(package_name)
+    assert p is not None
+    assert str(p.version) == version
 
 
 @pytest.mark.asyncio
@@ -108,7 +118,7 @@ async def test_multi_nixpkgs_versions():
     nixpkgs = NixpkgsData(MULTIVERSION_DATA)
     c = VersionChooser(nixpkgs, dummy_package_requirements())
     await c.require(Requirement('a>=2.0.0'))
-    assert str(c.package_for('a').version) == '3.0.0'
+    assert_version(c, 'a', '3.0.0')
 
 
 @pytest.mark.asyncio
@@ -120,7 +130,7 @@ async def test_uses_runtime_dependencies():
     await c.require(Requirement('django>=2.2'))
     assert c.package_for('django')
     assert c.package_for('pytz')
-    assert str(c.package_for('pytz').version) == '2019.3'
+    assert_version(c, 'pytz', '2019.3')
 
 
 @pytest.mark.asyncio

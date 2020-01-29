@@ -9,11 +9,12 @@ from pypi2nixpkgs.exceptions import (
     IntegrityError,
 )
 from pypi2nixpkgs.pypi_api import (
+    ABCPyPICache,
     PyPIData,
     PyPIPackage,
 )
 
-class DummyCache:
+class DummyCache(ABCPyPICache):
     def __init__(self, **hardcoded_data):
         self.data = {
             canonicalize_name(k): v
@@ -25,6 +26,9 @@ class DummyCache:
             return self.data[package]
         except KeyError:
             raise PackageNotFound()
+
+    async def fetch_url(self, url, filename) -> Path:
+        raise NotImplementedError()
 
 
 with (Path(__file__).parent / "sampleproject_response.json").open() as fp:
@@ -88,6 +92,6 @@ def test_package_filename():
         version=Version("1.3.1"),
         sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
         download_url='https://files.pythonhosted.org/packages/7f/7b/7627af71aaf127014238040b78ad8eaf416facda3d0755af69f382399c36/faraday_agent_dispatcher-1.0.tar.gz',
-        pypi_cache=None,
+        pypi_cache=None,  # type: ignore
     )
     assert p.filename == 'faraday_agent_dispatcher-1.0.tar.gz'
