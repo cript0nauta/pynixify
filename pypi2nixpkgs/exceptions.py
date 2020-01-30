@@ -6,3 +6,6 @@ class NoMatchingVersionFound(Exception):
 
 class IntegrityError(Exception):
     pass
+
+class NixBuildError(Exception):
+    pass

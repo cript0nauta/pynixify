@@ -7,7 +7,7 @@ from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
 from pypi2nixpkgs.base import Package
-from pypi2nixpkgs.exceptions import PackageNotFound
+from pypi2nixpkgs.exceptions import PackageNotFound, NixBuildError
 
 @dataclass
 class NixPackage(Package):
@@ -66,5 +66,6 @@ async def run_nix_build(*args: Sequence[str]) -> Path:
         'nix-build', *args, stdout=asyncio.subprocess.PIPE)
     (stdout, _) = await proc.communicate()
     status = await proc.wait()
-    assert status == 0
+    if status:
+        raise NixBuildError(f'nix-buld failed with code {status}')
     return Path(stdout.strip().decode())
