@@ -59,8 +59,6 @@ with (Path(__file__).parent / "nixpkgs_packages.json").open() as fp:
 def dummy_package_requirements(hardcoded_reqs={}):
     async def f(package: Package) -> PackageRequirements:
         nonlocal hardcoded_reqs
-        # Don't use the data inside the result file, just use it to prevent
-        # PackageRequirements.__init__ from failing
         if isinstance(package, NixPackage):
             key = package.attr
         elif isinstance(package, PyPIPackage):
@@ -68,11 +66,7 @@ def dummy_package_requirements(hardcoded_reqs={}):
         else:
             raise NotImplementedError()
         (b, t, r) = hardcoded_reqs.get(key, ([], [], []))
-        reqs = PackageRequirements(
-            Path(__file__).parent / "parse_setuppy_data_result")
-        reqs.build_requirements = b
-        reqs.test_requirements = t
-        reqs.runtime_requirements = r
+        reqs = PackageRequirements(b, t, r)
         return reqs
     return f
 

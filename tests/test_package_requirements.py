@@ -6,7 +6,7 @@ from pypi2nixpkgs.package_requirements import PackageRequirements
 
 @pytest.mark.asyncio
 async def test_package_requirements():
-    reqs = PackageRequirements(
+    reqs = PackageRequirements.from_result_path(
         Path(__file__).parent / "parse_setuppy_data_result")
 
     def has_requirement(r: str, l: Sequence[Requirement]):

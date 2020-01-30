@@ -12,17 +12,20 @@ class PackageRequirements:
     test_requirements: Sequence[Requirement]
     runtime_requirements: Sequence[Requirement]
 
-    def __init__(self, result_path: Path):
+    @classmethod
+    def from_result_path(cls, result_path: Path):
         attr_mapping = {
             'build_requirements': Path('setup_requires.txt'),
             'test_requirements': Path('tests_requires.txt'),
             'runtime_requirements': Path('install_requires.txt'),
         }
+        kwargs = {}
         for (attr, filename) in attr_mapping.items():
             with (result_path / filename).open() as fp:
                 # Convert from Requirement.parse to Requirement
                 reqs = [Requirement(str(r)) for r in parse_requirements(fp)]
-                setattr(self, attr, reqs)
+                kwargs[attr] = reqs
+        return cls(**kwargs)
 
 
 async def eval_path_requirements(path: Path) -> PackageRequirements:
