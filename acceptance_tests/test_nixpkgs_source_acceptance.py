@@ -6,6 +6,10 @@ from pypi2nixpkgs.nixpkgs_sources import (
     load_nixpkgs_data,
     NixpkgsData,
 )
+from pypi2nixpkgs.pypi_api import (
+    PyPICache,
+    PyPIData,
+)
 from pypi2nixpkgs.package_requirements import (
     eval_path_requirements,
 )
@@ -39,3 +43,19 @@ async def test_all():
     assert_version(c, 'flask', '1.0.4')
     assert_version(c, 'itsdangerous', '1.1.0')
     assert_version(c, 'Werkzeug', '0.15.5')
+
+
+@pytest.mark.asyncio
+async def test_version_chooser_pypi_and_nixpkgs():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+
+    await c.require(Requirement('faraday-agent-dispatcher==1.0'))
+    assert c.package_for('faraday-agent-dispatcher')
+    assert c.package_for('click')
+    assert c.package_for('websockets')
+    assert c.package_for('syslog_rfc5424_formatter')
