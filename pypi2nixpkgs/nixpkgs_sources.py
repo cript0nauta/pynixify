@@ -1,8 +1,9 @@
 import json
 import asyncio
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Any
 from dataclasses import dataclass
+from collections import defaultdict
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
@@ -26,7 +27,10 @@ class NixPackage(Package):
 
 class NixpkgsData:
     def __init__(self, data):
-        self.__data = {canonicalize_name(k): v for (k, v) in data.items()}
+        data_defaultdict: Any = defaultdict(list)
+        for (k, v) in data.items():
+            data_defaultdict[canonicalize_name(k)] += v
+        self.__data = dict(data_defaultdict)
 
     def from_pypi_name(self, name: str) -> Sequence[NixPackage]:
         try:

@@ -37,6 +37,22 @@ MULTIVERSION_DATA = {
 }
 
 
+CANONICALIZE_COLLISION_DATA = {
+    "a-b": [{
+        "attr": "xxx",
+        "pypiName": "a-b",
+        "version": "1",
+        "src": "mirror://pypi/a/a-b/a-b-1.tar.gz",
+    }],
+    "A_B": [{
+        "attr": "yyy",
+        "pypiName": "a-b",
+        "version": "2",
+        "src": "mirror://pypi/a/a-b/a-b-1.tar.gz",
+    }],
+}
+
+
 def test_parse_json():
     repo = NixpkgsData(ZSTD_DATA)
     repo.from_pypi_name('zstd')
@@ -58,6 +74,12 @@ def test_not_case_sensitive():
 def test_canonicalize():
     repo = NixpkgsData(PYTESTRUNNER_DATA)
     repo.from_pypi_name('PYTEST_RUNNER')
+
+
+def test_canonicalize_collision():
+    repo = NixpkgsData(CANONICALIZE_COLLISION_DATA)
+    repo.from_requirement(Requirement('a_B==1'))
+    repo.from_requirement(Requirement('A-b==2'))
 
 
 def test_from_pypi_name_response():

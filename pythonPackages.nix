@@ -49,17 +49,29 @@ let
     builtins.filter (e: !(builtins.isNull e.pypiName))
     (builtins.map (e: e // { pypiName = urlToPypiName e.src; }) sources);
 
+  usePypiNameIfPossible = sources:
+    # Get the PyPI name of a derivation from its source URL. If it's not
+    # possible, use the attr name
+    builtins.map (e:
+      e // {
+        pypiName = if (builtins.isNull (urlToPypiName e.src)) then
+          e.attr
+        else
+          urlToPypiName e.src;
+      }) sources;
+
   pipe = l:
     let
       elem = builtins.head l;
       funcChain = builtins.tail l;
     in lib.foldl (acc: f: f acc) elem funcChain;
 
-in #lib.groupBy (x: x.pypiName) (keepPypi (sources validPackages))
-pipe [
+  # lib.groupBy (x: x.pypiName) (keepPypi (sources validPackages))
+in pipe [
   python3Packages
   (lib.filterAttrs (k: v: (builtins.tryEval v).success))
   sources
-  keepPypi
+  # keepPypi
+  usePypiNameIfPossible
   (lib.groupBy (x: x.pypiName))
-  ]
+]
