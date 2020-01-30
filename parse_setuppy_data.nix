@@ -1,5 +1,6 @@
 { file, stdenv ? (import <nixpkgs> { }).stdenv
-, python ? (import <nixpkgs> { }).python3 }:
+, unzip ? (import <nixpkgs> { }).unzip, python ? (import <nixpkgs> { }).python3
+}:
 
 let
   removeExt = fileName: builtins.elemAt (builtins.split "\\." fileName) 0;
@@ -14,6 +15,7 @@ let
 in stdenv.mkDerivation {
   name = "setup.py_data_${removeExt (builtins.baseNameOf file)}";
   src = file;
+  nativeBuildInputs = [ unzip ];
   buildInputs = [ pythonWithPackages ];
   buildPhase = ''
     mkdir -p $out
