@@ -146,6 +146,7 @@ async def test_uses_runtime_dependencies():
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail(reason='Test dependencies are not used for now')
 async def test_uses_test_dependencies():
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements({
@@ -153,7 +154,7 @@ async def test_uses_test_dependencies():
     }))
     await c.require(Requirement('django>=2.2'))
     assert c.package_for('django')
-    assert c.package_for('pytest')
+    assert c.package_for('pytest') is not None
 
 
 @pytest.mark.asyncio
@@ -171,12 +172,12 @@ async def test_nixpkgs_transitive():
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements({
         'flask': ([], [], [Requirement("itsdangerous")]),
-        'itsdangerous': ([], [Requirement('pytest')], []),
+        'itsdangerous': ([], [], [Requirement('Werkzeug')]),
     }))
     await c.require(Requirement('flask'))
     assert c.package_for('flask')
     assert c.package_for('itsdangerous')
-    assert c.package_for('pytest')
+    assert c.package_for('Werkzeug')
 
 
 @pytest.mark.asyncio

@@ -76,10 +76,10 @@ class VersionChooser:
 
         for req in reqs.runtime_requirements:
             await self.require(req)
-        for req in reqs.test_requirements:
-            if canonicalize_name(req.name) in self._choosed_packages:
-                continue
-            await self.require(req)
+        # for req in reqs.test_requirements:
+        #     if canonicalize_name(req.name) in self._choosed_packages:
+        #         continue
+        #     await self.require(req)
 
     def package_for(self, package_name: str) -> Optional[Package]:
         try:
