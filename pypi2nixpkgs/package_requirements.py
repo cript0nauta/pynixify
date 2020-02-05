@@ -39,7 +39,7 @@ async def eval_path_requirements(path: Path) -> PackageRequirements:
             '--no-build-output',
             '--arg',
             'file',
-            str(path.absolute())
+            str(path.resolve())
         )
     except NixBuildError:
         print(f'Error parsing requirements of {path}. Assuming it has no dependencies.')

@@ -105,7 +105,7 @@ async def get_path_hash(path: Path) -> str:
     url = urlunparse((
         'file',
         '',
-        str(path.absolute()),
+        str(path.resolve()),
         '',
         '',
         '',
