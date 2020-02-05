@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import tempfile
 import aiohttp
@@ -5,6 +6,7 @@ import aiofiles
 from typing import Sequence
 from pathlib import Path
 from dataclasses import dataclass
+from urllib.parse import urlunparse
 from abc import ABCMeta, abstractmethod
 from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
@@ -97,3 +99,23 @@ class PyPICache:
                             break
                         await fp.write(data)
                 return Path(filename)
+
+
+async def get_path_hash(path: Path) -> str:
+    url = urlunparse((
+        'file',
+        '',
+        str(path.absolute()),
+        '',
+        '',
+        '',
+    ))
+    proc = await asyncio.create_subprocess_exec(
+        'nix-prefetch-url', url,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    (stdout, _) = await proc.communicate()
+    status = await proc.wait()
+    assert status == 0
+    return stdout.decode().strip()

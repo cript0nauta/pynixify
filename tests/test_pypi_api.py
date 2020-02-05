@@ -12,6 +12,7 @@ from pypi2nixpkgs.pypi_api import (
     ABCPyPICache,
     PyPIData,
     PyPIPackage,
+    get_path_hash,
 )
 
 class DummyCache(ABCPyPICache):
@@ -95,3 +96,10 @@ def test_package_filename():
         pypi_cache=None,  # type: ignore
     )
     assert p.filename == 'faraday_agent_dispatcher-1.0.tar.gz'
+
+
+@pytest.mark.asyncio
+async def test_get_path_hash():
+    path = (Path(__file__).parent / "random_file")
+    hash_ = await get_path_hash(path)
+    assert hash_ == '0adj0mj17yafd2imz49v3qklys2h8zf4hh443sx0ql8xibf8wpzq'
