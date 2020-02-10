@@ -19,6 +19,7 @@ from pypi2nixpkgs.version_chooser import (
     evaluate_package_requirements,
 )
 from pypi2nixpkgs.expression_builder import build_nix_expression
+from pypi2nixpkgs.pypi_api import PyPIPackage, get_path_hash
 from tests.test_version_chooser import assert_version, dummy_pypi
 
 PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']
@@ -95,7 +96,9 @@ async def test_build_sampleproject_expression():
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(nixpkgs, pypi, f)
     await c.require(Requirement('sampleproject==1.3.1'))
-    expr = await build_nix_expression(c, 'sampleproject', ['peppercorn'])
+    package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
+    sha256 = await get_path_hash(await package.source())
+    expr = build_nix_expression(package, 'sampleproject', ['peppercorn'], sha256)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
