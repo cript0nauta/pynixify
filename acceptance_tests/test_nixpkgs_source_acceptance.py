@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.version import parse
@@ -17,6 +18,7 @@ from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     evaluate_package_requirements,
 )
+from pypi2nixpkgs.expression_builder import build_nix_expression
 from tests.test_version_chooser import assert_version, dummy_pypi
 
 PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']
@@ -59,3 +61,50 @@ async def test_version_chooser_pypi_and_nixpkgs():
     assert c.package_for('click')
     assert c.package_for('websockets')
     assert c.package_for('syslog_rfc5424_formatter')
+
+
+async def run_nix_build(expr: str) -> Path:
+    proc = await asyncio.create_subprocess_exec(
+        'nix-build', '-Q', '-E', '-',
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE)
+    proc.stdin.write(expr.encode())  # type: ignore
+    proc.stdin.write_eof()  # type: ignore
+    stdout, stderr = await proc.communicate()
+    assert (await proc.wait()) == 0
+    return Path(stdout.splitlines()[-1].decode())
+
+
+@pytest.mark.asyncio
+async def test_run_nix_build():
+    result = await run_nix_build('with (import <nixpkgs> {}); hello')
+    proc = await asyncio.create_subprocess_shell(
+        f'{result}/bin/hello',
+        stdout=asyncio.subprocess.PIPE)
+    stdout, stderr = await proc.communicate()
+    assert (await proc.wait()) == 0
+    assert b'Hello, world!' in stdout
+
+
+@pytest.mark.asyncio
+async def test_build_sampleproject_expression():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('sampleproject==1.3.1'))
+    expr = await build_nix_expression(c, 'sampleproject', ['peppercorn'])
+
+    print(expr)
+    wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
+    print(wrapper_expr)
+
+    result = await run_nix_build(wrapper_expr)
+    proc = await asyncio.create_subprocess_shell(
+        f'{result}/bin/sample',
+        stdout=asyncio.subprocess.PIPE)
+    stdout, stderr = await proc.communicate()
+    assert (await proc.wait()) == 0
+    assert b'Call your main application code here' in stdout
