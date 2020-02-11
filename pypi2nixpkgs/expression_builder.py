@@ -1,4 +1,5 @@
-from typing import Iterable
+from pathlib import Path
+from typing import Iterable, Mapping
 from pypi2nixpkgs.version_chooser import VersionChooser
 from pypi2nixpkgs.pypi_api import PyPIPackage
 
@@ -27,3 +28,29 @@ def build_nix_expression(
         buildInputs = [{' '.join(package_deps)}];
     }}
     """
+
+
+def build_overlayed_nixpkgs(overlays: Mapping[str, Path]) -> str:
+    header = """{ overlays ? [ ], ...}@args:
+    let
+        pypi2nixOverlay = self: super: {
+            python3 = super.python3.override { inherit packageOverrides; };
+        };
+
+        packageOverrides = self: super: {
+    """
+    footer = """
+        };
+    in import <nixpkgs> (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
+    """
+
+    parts = [header]
+
+    for (package_name, path) in overlays.items():
+        parts.append(f"""
+            {package_name} =
+                self.callPackage {path.resolve()} {{ }};
+        """)
+
+    parts.append(footer)
+    return '\n'.join(parts)

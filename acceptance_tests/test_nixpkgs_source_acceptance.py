@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+import tempfile
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.version import parse
@@ -18,7 +19,10 @@ from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     evaluate_package_requirements,
 )
-from pypi2nixpkgs.expression_builder import build_nix_expression
+from pypi2nixpkgs.expression_builder import (
+    build_nix_expression,
+    build_overlayed_nixpkgs,
+)
 from pypi2nixpkgs.pypi_api import PyPIPackage, get_path_hash
 from tests.test_version_chooser import assert_version, dummy_pypi
 
@@ -105,6 +109,36 @@ async def test_build_sampleproject_expression():
     print(wrapper_expr)
 
     result = await run_nix_build(wrapper_expr)
+    proc = await asyncio.create_subprocess_shell(
+        f'{result}/bin/sample',
+        stdout=asyncio.subprocess.PIPE)
+    stdout, stderr = await proc.communicate()
+    assert (await proc.wait()) == 0
+    assert b'Call your main application code here' in stdout
+
+
+@pytest.mark.asyncio
+async def test_build_sampleproject_nixpkgs():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('sampleproject==1.3.1'))
+    package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
+    sha256 = await get_path_hash(await package.source())
+    sampleproject_expr = build_nix_expression(
+        package, 'sampleproject', ['peppercorn'], sha256)
+
+    with tempfile.NamedTemporaryFile(suffix='.nix') as fp:
+        fp.write(sampleproject_expr.encode())
+        fp.flush()
+        nixpkgs_expr = build_overlayed_nixpkgs({'sampleproject': Path(fp.name)})
+        print(nixpkgs_expr)
+        wrapper_expr = f"""(({nixpkgs_expr}) {{}}).python3.pkgs.sampleproject"""
+        result = await run_nix_build(wrapper_expr)
+
     proc = await asyncio.create_subprocess_shell(
         f'{result}/bin/sample',
         stdout=asyncio.subprocess.PIPE)
