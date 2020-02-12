@@ -45,11 +45,13 @@ async def test_simple_from_requirement():
     assert str(drv.version) == '1.3.1'
     assert drv.download_url ==  "https://files.pythonhosted.org/packages/6f/5b/2f3fe94e1c02816fe23c7ceee5292fb186912929e1972eee7fb729fa27af/sampleproject-1.3.1.tar.gz"
     assert drv.sha256 == "3593ca2f1e057279d70d6144b14472fb28035b1da213dde60906b703d6f82c55"
+    assert drv.pypi_name == 'sampleproject'
 
 @pytest.mark.asyncio
 async def test_canonicalize():
     data = PyPIData(DummyCache(**{"aA-bB_cC": SAMPLEPROJECT_DATA}))
     drvs = await data.from_requirement(Requirement('Aa_Bb-Cc==1.3.1'))
+    assert drvs[0].pypi_name == 'aa-bb-cc'
 
 @pytest.mark.asyncio
 async def test_invalid_package():
@@ -64,6 +66,7 @@ async def test_fetch_blob():
             return Path(__file__).parent / "sampleproject_response.json"
 
     p = PyPIPackage(
+        pypi_name='sampleproject',
         version=Version("1.3.1"),
         sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
         download_url='http://mockme',
@@ -79,6 +82,7 @@ async def test_fetch_blob_fails():
             return Path('/dev/null')
 
     p = PyPIPackage(
+        pypi_name='sampleproject',
         version=Version("1.3.1"),
         sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
         download_url='http://mockme',
@@ -90,6 +94,7 @@ async def test_fetch_blob_fails():
 
 def test_package_filename():
     p = PyPIPackage(
+        pypi_name='sampleproject',
         version=Version("1.3.1"),
         sha256='e95ad00f0fd5c0297b7a0b4000e1286994ee4db9df54d9b19ff440b0adbc1eb3',
         download_url='https://files.pythonhosted.org/packages/7f/7b/7627af71aaf127014238040b78ad8eaf416facda3d0755af69f382399c36/faraday_agent_dispatcher-1.0.tar.gz',

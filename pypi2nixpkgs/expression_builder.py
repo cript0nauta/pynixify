@@ -5,7 +5,6 @@ from pypi2nixpkgs.pypi_api import PyPIPackage
 
 def build_nix_expression(
         package: PyPIPackage,
-        package_name: str,
         package_deps: Iterable[str],
         sha256: str
     ) -> str:
@@ -15,7 +14,7 @@ def build_nix_expression(
     return f"""
     {{ {args} }}:
     buildPythonPackage rec {{
-        pname = "{package_name}";
+        pname = "{package.pypi_name}";
         version = "{version}";
         src = fetchPypi {{
             inherit pname version;

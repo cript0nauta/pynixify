@@ -102,7 +102,7 @@ async def test_build_sampleproject_expression():
     await c.require(Requirement('sampleproject==1.3.1'))
     package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
     sha256 = await get_path_hash(await package.source())
-    expr = build_nix_expression(package, 'sampleproject', ['peppercorn'], sha256)
+    expr = build_nix_expression(package, ['peppercorn'], sha256)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
@@ -129,7 +129,7 @@ async def test_build_sampleproject_nixpkgs():
     package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
     sha256 = await get_path_hash(await package.source())
     sampleproject_expr = build_nix_expression(
-        package, 'sampleproject', ['peppercorn'], sha256)
+        package, ['peppercorn'], sha256)
 
     with tempfile.NamedTemporaryFile(suffix='.nix') as fp:
         fp.write(sampleproject_expr.encode())

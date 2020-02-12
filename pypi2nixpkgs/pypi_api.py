@@ -32,6 +32,7 @@ class ABCPyPICache(metaclass=ABCMeta):
 class PyPIPackage(Package):
     sha256: str
     download_url: str
+    pypi_name: str
     pypi_cache: ABCPyPICache
 
     async def source(self, extra_args=[]) -> Path:
@@ -77,6 +78,7 @@ class PyPIData:
                     sha256=data['digests']['sha256'],
                     version=parse(version),
                     download_url=data['url'],
+                    pypi_name=canonicalize_name(req.name),
                     pypi_cache=self.pypi_cache,
                 ))
         return matching

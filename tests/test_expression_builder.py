@@ -51,7 +51,6 @@ async def test_compiles(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
-        'sampleproject',
         [],
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
@@ -62,7 +61,6 @@ async def test_call(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
-        'sampleproject',
         [],
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"
