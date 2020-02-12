@@ -60,6 +60,10 @@ class PyPIPackage(Package):
     def filename(self):
         return Path(urlparse(self.download_url).path).name
 
+    @property
+    def attr(self):
+        return self.pypi_name
+
 
 class PyPIData:
     def __init__(self, pypi_cache):

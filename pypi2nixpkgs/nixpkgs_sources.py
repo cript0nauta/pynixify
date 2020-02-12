@@ -2,7 +2,6 @@ import json
 import asyncio
 from pathlib import Path
 from typing import Sequence, Any
-from dataclasses import dataclass
 from collections import defaultdict
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
@@ -10,9 +9,15 @@ from packaging.version import Version, parse
 from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.exceptions import PackageNotFound, NixBuildError
 
-@dataclass
 class NixPackage(Package):
-    attr: str
+    def __init__(self, *, attr: str, version: Version):
+        self.version = version
+        self.__attr = attr  # Ugly hack to fix mypy errors
+
+    @property
+    def attr(self):
+        # Ugly hack to fix mypy errors
+        return self.__attr
 
     async def source(self, extra_args=[]):
         args = [

@@ -9,3 +9,6 @@ class Package:
     async def source(self, extra_args=[]) -> Path:
         raise NotImplementedError()
 
+    @property
+    def attr(self) -> str:
+        raise NotImplementedError()
