@@ -241,3 +241,15 @@ async def test_python_version_marker():
     c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements())
     await c.require(Requirement("flask; python_version<'3'"))
     assert c.package_for('flask') is None
+
+
+@pytest.mark.asyncio
+async def test_all_pypi_packages():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    c = VersionChooser(nixpkgs, pypi, dummy_package_requirements({
+        "sampleproject": ([], [], [Requirement('flask')]),
+    }))
+    await c.require(Requirement('sampleproject'))
+    sampleproject = c.package_for('sampleproject')
+    assert c.all_pypi_packages() == [sampleproject]

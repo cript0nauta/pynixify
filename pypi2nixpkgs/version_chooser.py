@@ -5,7 +5,7 @@ from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
 from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.nixpkgs_sources import NixpkgsData
-from pypi2nixpkgs.pypi_api import PyPIData
+from pypi2nixpkgs.pypi_api import PyPIData, PyPIPackage
 from pypi2nixpkgs.package_requirements import (
     PackageRequirements,
     eval_path_requirements,
@@ -87,6 +87,12 @@ class VersionChooser:
         except KeyError:
             return None
         return pkg
+
+    def all_pypi_packages(self) -> List[PyPIPackage]:
+        return [
+            v[0] for v in self._choosed_packages.values()
+            if isinstance(v[0], PyPIPackage)
+        ]
 
 async def evaluate_package_requirements(
         pkg: Package, extra_args=[]) -> PackageRequirements:
