@@ -30,7 +30,7 @@ class PackageRequirements:
 
 
 async def eval_path_requirements(path: Path) -> PackageRequirements:
-    nix_expression_path = Path('__file__').parent.parent / "parse_setuppy_data.nix"
+    nix_expression_path = Path(__file__).parent.parent / "parse_setuppy_data.nix"
     assert nix_expression_path.exists()
     try:
         nix_store_path = await run_nix_build(
