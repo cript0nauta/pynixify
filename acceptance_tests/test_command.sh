@@ -14,3 +14,9 @@ teardown(){
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.sampleproject
     ./result/bin/sample | grep 'Call your main'
 }
+
+@test "faraday-agent-dispatcher" {
+    pypi2nixpkgs faraday-agent-dispatcher
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.faraday-agent-dispatcher
+    ./result/bin/faraday-dispatcher --help
+}
