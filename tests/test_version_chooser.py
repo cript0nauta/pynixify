@@ -60,13 +60,7 @@ with (Path(__file__).parent / "nixpkgs_packages.json").open() as fp:
 def dummy_package_requirements(hardcoded_reqs={}):
     async def f(package: Package) -> PackageRequirements:
         nonlocal hardcoded_reqs
-        if isinstance(package, NixPackage):
-            key = package.attr
-        elif isinstance(package, PyPIPackage):
-            key = Path(package.download_url).name.split('-')[0]
-        else:
-            raise NotImplementedError()
-        (b, t, r) = hardcoded_reqs.get(key, ([], [], []))
+        (b, t, r) = hardcoded_reqs.get(package.attr, ([], [], []))
         reqs = PackageRequirements(b, t, r)
         return reqs
     return f
@@ -288,3 +282,20 @@ async def test_chosen_package_requirements_fails():
     )
     with pytest.raises(PackageNotFound):
         ChosenPackageRequirements.from_package_requirements(reqs, c)
+
+
+@pytest.mark.asyncio
+async def test_require_local_package():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    reqs_f = dummy_package_requirements({
+        "sampleproject": ([], [], [Requirement('flask')]),
+    })
+    c = VersionChooser(nixpkgs, pypi, reqs_f)
+    await c.require_local('sampleproject', Path('/src'))
+    sampleproject = c.package_for('sampleproject')
+    assert sampleproject is not None
+    assert isinstance(sampleproject, PyPIPackage)
+    assert c.package_for('flask')
+    src = await sampleproject.source()
+    assert src == Path('/src')

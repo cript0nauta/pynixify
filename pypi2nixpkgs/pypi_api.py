@@ -3,7 +3,7 @@ import hashlib
 import tempfile
 import aiohttp
 import aiofiles
-from typing import Sequence
+from typing import Sequence, Optional
 from pathlib import Path
 from dataclasses import dataclass
 from urllib.parse import urlunparse
@@ -34,8 +34,11 @@ class PyPIPackage(Package):
     download_url: str
     pypi_name: str
     pypi_cache: ABCPyPICache
+    local_source: Optional[Path] = None
 
     async def source(self, extra_args=[]) -> Path:
+        if self.local_source is not None:
+            return self.local_source
         filename = tempfile.mktemp(
             prefix='pypi2nixpkgs_download',
             suffix=self.filename,

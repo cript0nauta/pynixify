@@ -1,7 +1,7 @@
 import click
 import asyncio
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
@@ -37,11 +37,16 @@ async def _build_version_chooser() -> VersionChooser:
 
 @click.command()
 @click.argument('requirements', nargs=-1)
-def main(requirements):
-    asyncio.run(_main_async(requirements))
+@click.option('--local', nargs=1)
+def main(**kwargs):
+    asyncio.run(_main_async(**kwargs))
 
-async def _main_async(requirements):
+async def _main_async(requirements, local: Optional[str]):
     version_chooser: VersionChooser = await _build_version_chooser()
+
+    if local is not None:
+        await version_chooser.require_local(local, Path.cwd())
+
     for req in requirements:
         await version_chooser.require(Requirement(req))
 

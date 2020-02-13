@@ -1,4 +1,5 @@
 import operator
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Dict, Callable, Awaitable, Optional, List, Tuple
 from packaging.requirements import Requirement
@@ -23,6 +24,7 @@ class VersionChooser:
         self.nixpkgs_data = nixpkgs_data
         self.pypi_data = pypi_data
         self._choosed_packages: Dict[str, Tuple[Package, SpecifierSet]] = {}
+        self._local_packages: Dict[str, Package] = {}
         self.evaluate_requirements = req_evaluate
 
     async def require(self, r: Requirement):
@@ -53,25 +55,28 @@ class VersionChooser:
         found_nixpkgs = True
 
         try:
-            for p in self.nixpkgs_data.from_requirement(r):
-                pkgs.append(p)
-        except PackageNotFound:
-            found_nixpkgs = False
-
-        if not pkgs:
+            pkg = self._local_packages[canonicalize_name(r.name)]
+        except KeyError:
             try:
-                for p_ in await self.pypi_data.from_requirement(r):
-                    pkgs.append(p_)
+                for p in self.nixpkgs_data.from_requirement(r):
+                    pkgs.append(p)
             except PackageNotFound:
-                found_pypi = False
+                found_nixpkgs = False
 
-        if not found_nixpkgs and not found_pypi:
-            raise PackageNotFound(f'{r.name} not found in PyPI nor nixpkgs')
+            if not pkgs:
+                try:
+                    for p_ in await self.pypi_data.from_requirement(r):
+                        pkgs.append(p_)
+                except PackageNotFound:
+                    found_pypi = False
 
-        if not pkgs:
-            raise NoMatchingVersionFound(str(r))
+            if not found_nixpkgs and not found_pypi:
+                raise PackageNotFound(f'{r.name} not found in PyPI nor nixpkgs')
 
-        pkg = max(pkgs, key=operator.attrgetter('version'))
+            if not pkgs:
+                raise NoMatchingVersionFound(str(r))
+
+            pkg = max(pkgs, key=operator.attrgetter('version'))
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
@@ -81,6 +86,19 @@ class VersionChooser:
         #     if canonicalize_name(req.name) in self._choosed_packages:
         #         continue
         #     await self.require(req)
+
+    async def require_local(self, pypi_name: str, src: Path):
+        assert pypi_name not in self._choosed_packages
+        package = PyPIPackage(
+            pypi_name=pypi_name,
+            download_url='',
+            sha256='',
+            version='0.1dev',
+            pypi_cache=self.pypi_data.pypi_cache,
+            local_source=src,
+        )
+        self._local_packages[canonicalize_name(pypi_name)] = package
+        await self.require(Requirement(pypi_name))
 
     def package_for(self, package_name: str) -> Optional[Package]:
         try:

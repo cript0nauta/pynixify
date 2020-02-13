@@ -21,15 +21,23 @@ def build_nix_expression(
     args = set(non_python_dependencies + runtime_requirements + build_requirements)
 
     version = str(package.version)
+    if package.local_source:
+        src_part = f"""
+            src = {package.local_source.resolve()};
+        """
+    else:
+        src_part = f"""
+            src = builtins.fetchurl {{
+                url = "{package.download_url}";
+                sha256 = "{sha256}";
+            }};
+        """
     return f"""
     {{ {', '.join(args)} }}:
     buildPythonPackage rec {{
         pname = "{package.pypi_name}";
         version = "{version}";
-        src = builtins.fetchurl {{
-            url = "{package.download_url}";
-            sha256 = "{sha256}";
-        }};
+{src_part}
 
         # TODO FIXME
         doCheck = false;
