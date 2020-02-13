@@ -12,8 +12,11 @@ def build_nix_expression(
         sha256: str
     ) -> str:
     non_python_dependencies = ['fetchPypi', 'buildPythonPackage']
-    package_deps: List[str] = [p.attr for p in requirements.runtime_requirements]
-    args = ','.join(non_python_dependencies + list(package_deps))
+    runtime_requirements: List[str] = [
+            p.attr for p in requirements.runtime_requirements]
+    build_requirements: List[str] = [
+            p.attr for p in requirements.build_requirements]
+    args = ','.join(non_python_dependencies + list(runtime_requirements) + list(build_requirements))
     version = str(package.version)
     return f"""
     {{ {args} }}:
@@ -28,7 +31,8 @@ def build_nix_expression(
         # TODO FIXME
         doCheck = false;
 
-        buildInputs = [{' '.join(package_deps)}];
+        buildInputs = [{' '.join(build_requirements)}];
+        propagatedBuildInputs = [{' '.join(runtime_requirements)}];
     }}
     """
 

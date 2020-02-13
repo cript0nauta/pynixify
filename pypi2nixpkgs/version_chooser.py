@@ -114,16 +114,29 @@ class ChosenPackageRequirements:
             package_requirements: PackageRequirements,
             version_chooser: VersionChooser):
         kwargs: Any = {}
-        for attr in ('build_requirements', 'test_requirements',
-                     'runtime_requirements'):
-            reqs: List[Requirement] = getattr(package_requirements, attr)
-            packages: List[Package] = []
-            for req in reqs:
-                package = version_chooser.package_for(req.name)
-                if package is None:
-                    raise PackageNotFound(
-                        f'Package {req.name} not found in the version chooser'
-                    )
-                packages.append(package)
-            kwargs[attr] = packages
+
+        # build_requirements uses packages from nixpkgs. The packages do not
+        # need to be included in the version chooser
+        kwargs['build_requirements'] = []
+        for req in package_requirements.build_requirements:
+            package_ = max(
+                version_chooser.nixpkgs_data.from_requirement(req),
+                key=operator.attrgetter('version')
+            )
+            kwargs['build_requirements'].append(package_)
+
+        # test_requirements is not implemented for now
+        kwargs['test_requirements'] = []
+
+        # runtime_requirements uses the packages in the version chooser
+        packages: List[Package] = []
+        for req in package_requirements.runtime_requirements:
+            package = version_chooser.package_for(req.name)
+            if package is None:
+                raise PackageNotFound(
+                    f'Package {req.name} not found in the version chooser'
+                )
+            packages.append(package)
+        kwargs['runtime_requirements'] = packages
+
         return cls(**kwargs)
