@@ -16,32 +16,34 @@ let
       if builtins.isNull value then
       # Example: python3Packages.backports_lzma
         [ ]
-      else if !value ? src then
-      # Example: python3Packages.bootstrapped-pip
-        [ ]
-      else if !value.src ? urls then
-      # Example: python3Packages.cntk
-        [ ]
       else if !value ? version then
       # Example: python3Packages.dlib
         [ ]
       else [{
         attr = key;
-        src = builtins.head value.src.urls;
+        src = if !value ? src then
+          null
+        else if !value.src ? urls then
+          null
+        else
+          builtins.head value.src.urls;
         version = value.version;
       }]) (attrsToList packages);
 
   urlToPypiName = url:
-    let
-      match = builtins.match "mirror://pypi/./([^/]+)/.*" url;
-      match2 = builtins.match
-        "https://files.pythonhosted.org/packages/[^/]+/./([^/]+)/.*" url;
-    in if !(builtins.isNull match) then
-      builtins.head match
-    else if !(builtins.isNull match2) then
-      builtins.head match2
+    if builtins.isNull url then
+      null
     else
-      null;
+      let
+        match = builtins.match "mirror://pypi/./([^/]+)/.*" url;
+        match2 = builtins.match
+          "https://files.pythonhosted.org/packages/[^/]+/./([^/]+)/.*" url;
+      in if !(builtins.isNull match) then
+        builtins.head match
+      else if !(builtins.isNull match2) then
+        builtins.head match2
+      else
+        null;
 
   keepPypi = sources:
     # Filter the result of sources by only keeping entries whose source
