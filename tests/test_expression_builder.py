@@ -64,6 +64,23 @@ async def test_compiles(version_chooser):
 
 
 @pytest.mark.asyncio
+async def test_duplicate_parameter(version_chooser):
+    await version_chooser.require(Requirement('pytest'))
+    await version_chooser.require(Requirement("sampleproject"))
+    pytest = version_chooser.package_for('pytest')  # type: ignore
+    requirements = ChosenPackageRequirements(
+        build_requirements=[pytest],
+        test_requirements=[pytest],
+        runtime_requirements=[pytest]
+    )
+    result = build_nix_expression(
+        version_chooser.package_for('sampleproject'),
+        requirements,
+        sha256='aaaaaa')
+    assert await is_valid_nix(result), "Invalid Nix expression"
+
+
+@pytest.mark.asyncio
 async def test_call(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
     result = build_nix_expression(

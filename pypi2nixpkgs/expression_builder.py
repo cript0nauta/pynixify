@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Mapping, List
+from typing import Iterable, Mapping, List, Set
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
@@ -16,10 +16,13 @@ def build_nix_expression(
             p.attr for p in requirements.runtime_requirements]
     build_requirements: List[str] = [
             p.attr for p in requirements.build_requirements]
-    args = ','.join(non_python_dependencies + list(runtime_requirements) + list(build_requirements))
+
+    args: Set[str]
+    args = set(non_python_dependencies + runtime_requirements + build_requirements)
+
     version = str(package.version)
     return f"""
-    {{ {args} }}:
+    {{ {', '.join(args)} }}:
     buildPythonPackage rec {{
         pname = "{package.pypi_name}";
         version = "{version}";
