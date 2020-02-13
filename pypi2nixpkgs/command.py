@@ -12,6 +12,7 @@ from pypi2nixpkgs.pypi_api import (
 )
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
+    ChosenPackageRequirements,
     evaluate_package_requirements,
 )
 from pypi2nixpkgs.expression_builder import (
@@ -51,10 +52,16 @@ async def _main_async(requirements):
     overlays: Dict[str, Path] = {}
     package: PyPIPackage
     for package in version_chooser.all_pypi_packages():
-        deps: List[str] = []
+
+        reqs: ChosenPackageRequirements
+        reqs = ChosenPackageRequirements.from_package_requirements(
+            await evaluate_package_requirements(package),
+            version_chooser
+        )
+
         sha256 = await get_path_hash(await package.source())
         expr = build_nix_expression(
-            package, deps, sha256)
+            package, reqs, sha256)
         expression_path = (packages_path / f'{package.pypi_name}.nix')
         with expression_path.open('w') as fp:
             fp.write(expr)

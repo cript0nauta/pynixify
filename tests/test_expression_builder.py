@@ -13,6 +13,7 @@ from pypi2nixpkgs.expression_builder import build_nix_expression
 from .test_pypi_api import DummyCache, SAMPLEPROJECT_DATA
 from .test_version_chooser import (
     NIXPKGS_JSON,
+    ChosenPackageRequirements,
     dummy_package_requirements,
 )
 
@@ -21,6 +22,12 @@ DEFAULT_ARGS = {
     'fetchPypi': 'a: a',
     'buildPythonPackage': 'a: a',
 }
+
+NO_REQUIREMENTS = ChosenPackageRequirements(
+    build_requirements=[],
+    test_requirements=[],
+    runtime_requirements=[]
+)
 
 
 async def is_valid_nix(expr: str, **kwargs) -> bool:
@@ -51,7 +58,7 @@ async def test_compiles(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
-        [],
+        NO_REQUIREMENTS,
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
 
@@ -61,6 +68,6 @@ async def test_call(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
-        [],
+        NO_REQUIREMENTS,
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"

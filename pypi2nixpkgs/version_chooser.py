@@ -1,5 +1,6 @@
 import operator
-from typing import Dict, Callable, Awaitable, Optional, List, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, Callable, Awaitable, Optional, List, Tuple
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
@@ -94,7 +95,35 @@ class VersionChooser:
             if isinstance(v[0], PyPIPackage)
         ]
 
+
 async def evaluate_package_requirements(
         pkg: Package, extra_args=[]) -> PackageRequirements:
     src = await pkg.source(extra_args)
     return await eval_path_requirements(src)
+
+
+@dataclass
+class ChosenPackageRequirements:
+    build_requirements: List[Package]
+    test_requirements: List[Package]
+    runtime_requirements: List[Package]
+
+    @classmethod
+    def from_package_requirements(
+            cls,
+            package_requirements: PackageRequirements,
+            version_chooser: VersionChooser):
+        kwargs: Any = {}
+        for attr in ('build_requirements', 'test_requirements',
+                     'runtime_requirements'):
+            reqs: List[Requirement] = getattr(package_requirements, attr)
+            packages: List[Package] = []
+            for req in reqs:
+                package = version_chooser.package_for(req.name)
+                if package is None:
+                    raise PackageNotFound(
+                        f'Package {req.name} not found in the version chooser'
+                    )
+                packages.append(package)
+            kwargs[attr] = packages
+        return cls(**kwargs)

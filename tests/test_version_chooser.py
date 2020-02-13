@@ -14,6 +14,7 @@ from pypi2nixpkgs.pypi_api import (
 )
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
+    ChosenPackageRequirements,
 )
 from pypi2nixpkgs.exceptions import (
     NoMatchingVersionFound,
@@ -253,3 +254,37 @@ async def test_all_pypi_packages():
     await c.require(Requirement('sampleproject'))
     sampleproject = c.package_for('sampleproject')
     assert c.all_pypi_packages() == [sampleproject]
+
+
+@pytest.mark.asyncio
+async def test_chosen_package_requirements():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    reqs_f = dummy_package_requirements({
+        "sampleproject": ([], [], [Requirement('flask')]),
+    })
+    c = VersionChooser(nixpkgs, pypi, reqs_f)
+    await c.require(Requirement('sampleproject'))
+    sampleproject = c.package_for('sampleproject')
+    reqs: PackageRequirements = await reqs_f(sampleproject)
+
+    chosen: ChosenPackageRequirements
+    chosen = ChosenPackageRequirements.from_package_requirements(
+        reqs, c)
+
+    assert len(chosen.runtime_requirements) == 1
+    assert chosen.runtime_requirements[0] is c.package_for('flask')
+
+
+@pytest.mark.asyncio
+async def test_chosen_package_requirements_fails():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    c = VersionChooser(nixpkgs, pypi, dummy_package_requirements())
+    reqs = PackageRequirements(
+        build_requirements=[],
+        test_requirements=[],
+        runtime_requirements=[Requirement('invalid')]
+    )
+    with pytest.raises(PackageNotFound):
+        ChosenPackageRequirements.from_package_requirements(reqs, c)

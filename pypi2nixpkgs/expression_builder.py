@@ -1,14 +1,18 @@
 from pathlib import Path
-from typing import Iterable, Mapping
-from pypi2nixpkgs.version_chooser import VersionChooser
+from typing import Iterable, Mapping, List
+from pypi2nixpkgs.version_chooser import (
+    VersionChooser,
+    ChosenPackageRequirements,
+)
 from pypi2nixpkgs.pypi_api import PyPIPackage
 
 def build_nix_expression(
         package: PyPIPackage,
-        package_deps: Iterable[str],
+        requirements: ChosenPackageRequirements,
         sha256: str
     ) -> str:
     non_python_dependencies = ['fetchPypi', 'buildPythonPackage']
+    package_deps: List[str] = [p.attr for p in requirements.runtime_requirements]
     args = ','.join(non_python_dependencies + list(package_deps))
     version = str(package.version)
     return f"""

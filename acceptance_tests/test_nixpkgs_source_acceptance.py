@@ -17,6 +17,7 @@ from pypi2nixpkgs.package_requirements import (
 )
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
+    ChosenPackageRequirements,
     evaluate_package_requirements,
 )
 from pypi2nixpkgs.expression_builder import (
@@ -102,7 +103,12 @@ async def test_build_sampleproject_expression():
     await c.require(Requirement('sampleproject==1.3.1'))
     package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
     sha256 = await get_path_hash(await package.source())
-    expr = build_nix_expression(package, ['peppercorn'], sha256)
+    reqs = ChosenPackageRequirements(
+        build_requirements=[],
+        test_requirements=[],
+        runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
+    )
+    expr = build_nix_expression(package, reqs, sha256)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
@@ -128,8 +134,13 @@ async def test_build_sampleproject_nixpkgs():
     await c.require(Requirement('sampleproject==1.3.1'))
     package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
     sha256 = await get_path_hash(await package.source())
+    reqs = ChosenPackageRequirements(
+        build_requirements=[],
+        test_requirements=[],
+        runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
+    )
     sampleproject_expr = build_nix_expression(
-        package, ['peppercorn'], sha256)
+        package, reqs, sha256)
 
     with tempfile.NamedTemporaryFile(suffix='.nix') as fp:
         fp.write(sampleproject_expr.encode())
