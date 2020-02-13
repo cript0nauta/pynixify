@@ -1,8 +1,8 @@
 diff --git a/setuptools/__init__.py b/setuptools/__init__.py
-index a71b2bbd..19b05406 100644
+index a71b2bbd..5e7f7843 100644
 --- a/setuptools/__init__.py
 +++ b/setuptools/__init__.py
-@@ -139,10 +139,26 @@ def _install_setup_requires(attrs):
+@@ -139,10 +139,35 @@ def _install_setup_requires(attrs):
          dist.fetch_build_eggs(dist.setup_requires)
  
  
@@ -25,7 +25,16 @@ index a71b2bbd..19b05406 100644
 +        ]
 +        for (filename, requirements) in targets:
 +            with (out / filename).open("w") as fp:
-+                fp.write('\n'.join(requirements))
++                if isinstance(requirements, list):
++                    fp.write('\n'.join(requirements))
++                elif isinstance(requirements, str):
++                    # According to setuptools docs:
++                    # It should be a string or list of strings specifying what
++                    # other distributions need to be present for the package’s
++                    # tests to run
++                    fp.write(requirements)
++                else:
++                    raise TypeError(f'Invalid value: {requirements}')
 +    else:
 +        # Make sure we have any requirements needed to interpret 'attrs'.
 +        _install_setup_requires(attrs)

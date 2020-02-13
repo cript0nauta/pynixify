@@ -69,6 +69,18 @@ async def test_version_chooser_pypi_and_nixpkgs():
     assert c.package_for('syslog_rfc5424_formatter')
 
 
+@pytest.mark.asyncio
+async def test_parse_single_requirements():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('passlib'))
+    assert c.package_for('passlib')
+
+
 async def run_nix_build(expr: str) -> Path:
     proc = await asyncio.create_subprocess_exec(
         'nix-build', '-Q', '-E', '-',
