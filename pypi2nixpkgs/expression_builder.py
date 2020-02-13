@@ -26,8 +26,8 @@ def build_nix_expression(
     buildPythonPackage rec {{
         pname = "{package.pypi_name}";
         version = "{version}";
-        src = fetchPypi {{
-            inherit pname version;
+        src = builtins.fetchurl {{
+            url = "{package.download_url}";
             sha256 = "{sha256}";
         }};
 
