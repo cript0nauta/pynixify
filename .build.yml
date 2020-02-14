@@ -1,0 +1,17 @@
+image: nixos/latest
+secrets:
+    - f7591c1f-d7cf-4807-a559-a099f9fd83e2
+sources:
+    - git@git.sr.ht:~viru5/pypi2nixpkgs
+repositories:
+    nixpkgs: https://nixos.org/channels/nixpkgs-unstable
+tasks:
+    - build: |
+        cd pypi2nixpkgs
+        nix-build
+    - test: |
+        cd pypi2nixpkgs
+        nix-shell --command 'pytest -v tests/ acceptance_tests'
+    - integration: |
+        nix-env -if pypi2nixpkgs/default.nix
+        nix-shell -p bats --command './pypi2nixpkgs/acceptance_tests/test_command.sh'
