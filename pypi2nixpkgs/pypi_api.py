@@ -67,6 +67,9 @@ class PyPIPackage(Package):
     def attr(self):
         return self.pypi_name
 
+    def __str__(self):
+        return f'PyPIPackage(attr={self.attr}, version={self.version})'
+
 
 class PyPIData:
     def __init__(self, pypi_cache):

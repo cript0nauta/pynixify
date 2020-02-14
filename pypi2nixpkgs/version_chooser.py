@@ -27,11 +27,13 @@ class VersionChooser:
         self._local_packages: Dict[str, Package] = {}
         self.evaluate_requirements = req_evaluate
 
-    async def require(self, r: Requirement):
+    async def require(self, r: Requirement, coming_from: Package=None):
         pkg: Package
 
         if r.marker and not r.marker.evaluate():
             return
+
+        print(f'Resolving {r}{f" (from {coming_from})" if coming_from else ""}')
 
         try:
             (pkg, specifier) = self._choosed_packages[canonicalize_name(r.name)]
@@ -42,7 +44,8 @@ class VersionChooser:
             self._choosed_packages[canonicalize_name(r.name)] = (pkg, specifier)
             if pkg.version not in specifier:
                 raise NoMatchingVersionFound(
-                    f'{r.name}=={str(pkg.version)} does not match {r}'
+                    f'New requirement {r} does not match already installed '
+                    f'{r.name}=={str(pkg.version)}'
                 )
             return
 
@@ -81,7 +84,7 @@ class VersionChooser:
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
         for req in reqs.runtime_requirements:
-            await self.require(req)
+            await self.require(req, coming_from=pkg)
         # for req in reqs.test_requirements:
         #     if canonicalize_name(req.name) in self._choosed_packages:
         #         continue
