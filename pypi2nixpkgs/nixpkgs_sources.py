@@ -54,7 +54,7 @@ class NixpkgsData:
 
 
 async def load_nixpkgs_data(extra_args):
-    nix_expression_path = Path(__file__).parent.parent / "pythonPackages.nix"
+    nix_expression_path = Path(__file__).parent / "data" / "pythonPackages.nix"
     args = [
         '--eval',
         '--strict',

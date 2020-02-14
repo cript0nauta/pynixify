@@ -4,6 +4,7 @@ setup(
     name='pypi2nixpkgs',
     version='0.1dev',
     packages=['pypi2nixpkgs',],
+    package_data={'pypi2nixpkgs': ['data/*']},
     license='GPLv3+',
     # long_description=open('README.txt').read(),
     tests_require=['pytest', 'pytest-asyncio'],

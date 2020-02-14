@@ -105,6 +105,7 @@ def test_package_filename():
     assert p.filename == 'faraday_agent_dispatcher-1.0.tar.gz'
 
 
+@pytest.mark.usesnix
 @pytest.mark.asyncio
 async def test_get_path_hash():
     path = (Path(__file__).parent / "random_file")

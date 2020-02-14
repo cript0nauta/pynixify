@@ -53,6 +53,7 @@ def version_chooser():
     return VersionChooser(nixpkgs, pypi, dummy_package_requirements())
 
 
+@pytest.mark.usesnix
 @pytest.mark.asyncio
 async def test_compiles(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
@@ -63,6 +64,7 @@ async def test_compiles(version_chooser):
     assert await is_valid_nix(result), "Invalid Nix expression"
 
 
+@pytest.mark.usesnix
 @pytest.mark.asyncio
 async def test_duplicate_parameter(version_chooser):
     await version_chooser.require(Requirement('pytest'))
@@ -80,6 +82,7 @@ async def test_duplicate_parameter(version_chooser):
     assert await is_valid_nix(result), "Invalid Nix expression"
 
 
+@pytest.mark.usesnix
 @pytest.mark.asyncio
 async def test_call(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
