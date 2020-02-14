@@ -23,6 +23,7 @@ class NixPackage(Package):
         args = [
             '--no-out-link',
             '<nixpkgs>',
+            '--no-build-output',
             '-A',
             f'python37Packages."{self.attr}".src',
         ]
@@ -72,7 +73,8 @@ async def load_nixpkgs_data(extra_args):
 
 async def run_nix_build(*args: Sequence[str]) -> Path:
     proc = await asyncio.create_subprocess_exec(
-        'nix-build', *args, stdout=asyncio.subprocess.PIPE)
+        'nix-build', *args, stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL)
     (stdout, _) = await proc.communicate()
     status = await proc.wait()
     if status:
