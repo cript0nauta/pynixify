@@ -1,13 +1,15 @@
 import json
 import asyncio
 from pathlib import Path
-from typing import Sequence, Any
+from typing import Sequence, Any, Optional
 from collections import defaultdict
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
 from pypi2nixpkgs.base import Package
 from pypi2nixpkgs.exceptions import PackageNotFound, NixBuildError
+
+NIXPKGS_URL: Optional[str] = None
 
 class NixPackage(Package):
     def __init__(self, *, attr: str, version: Version):
@@ -62,6 +64,8 @@ async def load_nixpkgs_data(extra_args):
         str(nix_expression_path),
     ]
     args += extra_args
+    if NIXPKGS_URL is not None:
+        args += ['-I', f'nixpkgs={NIXPKGS_URL}']
     proc = await asyncio.create_subprocess_exec(
         'nix-instantiate', *args, stdout=asyncio.subprocess.PIPE)
     (stdout, _) = await proc.communicate()
@@ -72,8 +76,13 @@ async def load_nixpkgs_data(extra_args):
 
 
 async def run_nix_build(*args: Sequence[str]) -> Path:
+    if NIXPKGS_URL is not None:
+        # TODO fix mypy hack
+        args_ = list(args) + ['-I', f'nixpkgs={NIXPKGS_URL}']
+    else:
+        args_ = list(args)
     proc = await asyncio.create_subprocess_exec(
-        'nix-build', *args, stdout=asyncio.subprocess.PIPE,
+        'nix-build', *args_, stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL)
     (stdout, _) = await proc.communicate()
     status = await proc.wait()

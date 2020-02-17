@@ -2,6 +2,7 @@ import click
 import asyncio
 from pathlib import Path
 from typing import List, Dict, Optional
+import pypi2nixpkgs.nixpkgs_sources
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
@@ -43,6 +44,10 @@ def main(**kwargs):
     asyncio.run(_main_async(**kwargs))
 
 async def _main_async(requirements, local: Optional[str], nixpkgs: Optional[str]):
+
+    if nixpkgs is not None:
+        pypi2nixpkgs.nixpkgs_sources.NIXPKGS_URL = nixpkgs
+
     version_chooser: VersionChooser = await _build_version_chooser()
 
     if local is not None:

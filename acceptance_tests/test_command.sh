@@ -43,3 +43,16 @@ teardown(){
         exit 1
     fi
 }
+
+@test "pin nixpkgs 2" {
+    # This tests that the pinned nixpkgs is used not only in the generated
+    # expression, but also when discovering nix packages
+    NIXPKGS_COMMIT=f1f5247103494195d00afd0b0f4ae789dedfd0e4
+    pypi2nixpkgs psycopg2==2.7.7 \
+        --nixpkgs "https://github.com/nixos/nixpkgs/archive/$NIXPKGS_COMMIT.tar.gz"
+    if [[ -f pypi2nixpkgs/packages/psycopg2.nix ]]; then
+        echo "Didn't use nixpkgs version of psycopg2"
+        exit 1
+    fi
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.psycopg2
+}
