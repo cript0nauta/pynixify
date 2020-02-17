@@ -38,10 +38,11 @@ async def _build_version_chooser() -> VersionChooser:
 @click.command()
 @click.argument('requirements', nargs=-1)
 @click.option('--local', nargs=1)
+@click.option('--nixpkgs', nargs=1)
 def main(**kwargs):
     asyncio.run(_main_async(**kwargs))
 
-async def _main_async(requirements, local: Optional[str]):
+async def _main_async(requirements, local: Optional[str], nixpkgs: Optional[str]):
     version_chooser: VersionChooser = await _build_version_chooser()
 
     if local is not None:
@@ -75,4 +76,23 @@ async def _main_async(requirements, local: Optional[str]):
 
 
     with (base_path / 'nixpkgs.nix').open('w') as fp:
-        fp.write(build_overlayed_nixpkgs(overlays))
+        if nixpkgs is None:
+            expr = build_overlayed_nixpkgs(overlays)
+        else:
+            sha256 = await get_url_hash(nixpkgs)
+            expr = build_overlayed_nixpkgs(overlays, (nixpkgs, sha256))
+        fp.write(expr)
+
+
+
+async def get_url_hash(url: str) -> str:
+    proc = await asyncio.create_subprocess_exec(
+        'nix-prefetch-url', '--unpack', url,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+    (stdout, _) = await proc.communicate()
+    status = await proc.wait()
+    if status != 0:
+        raise RuntimeError(f'Could not get hash of URL: {url}')
+    return stdout.decode().strip()

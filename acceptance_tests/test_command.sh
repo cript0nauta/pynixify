@@ -29,3 +29,17 @@ teardown(){
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.faraday-agent-dispatcher
     ./result/bin/faraday-dispatcher --help
 }
+
+@test "pin nixpkgs" {
+    NIXPKGS_COMMIT=f1f5247103494195d00afd0b0f4ae789dedfd0e4
+    pypi2nixpkgs flask \
+        --nixpkgs "https://github.com/nixos/nixpkgs/archive/$NIXPKGS_COMMIT.tar.gz"
+    cat pypi2nixpkgs/nixpkgs.nix
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.flask
+    if ! ./result/bin/flask --version | grep 'Flask 1.0.4'
+    then
+        echo Invalid Flask version:
+        ./result/bin/flask --version
+        exit 1
+    fi
+}

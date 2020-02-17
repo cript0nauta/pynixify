@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterable, Mapping, List, Set
+from typing import Iterable, Mapping, List, Set, Optional, Tuple
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
@@ -48,18 +48,37 @@ def build_nix_expression(
     """
 
 
-def build_overlayed_nixpkgs(overlays: Mapping[str, Path]) -> str:
-    header = """{ overlays ? [ ], ...}@args:
+def build_overlayed_nixpkgs(
+        overlays: Mapping[str, Path],
+        nixpkgs: Optional[Tuple[str, str]] = None
+        ) -> str:
+    if nixpkgs is None:
+        nixpkgs_expression = f"""
+            nixpkgs =
+                <nixpkgs>;
+        """
+    else:
+        (url, sha256) = nixpkgs
+        nixpkgs_expression = f"""
+            nixpkgs =
+                builtins.fetchTarball {{
+                    url = {url};
+                    sha256 = "{sha256}";
+                }};
+        """
+    header = f"""{{ overlays ? [ ], ...}}@args:
     let
-        pypi2nixOverlay = self: super: {
-            python3 = super.python3.override { inherit packageOverrides; };
-        };
+        pypi2nixOverlay = self: super: {{
+            python3 = super.python3.override {{ inherit packageOverrides; }};
+        }};
 
-        packageOverrides = self: super: {
+        {nixpkgs_expression}
+
+        packageOverrides = self: super: {{
     """
-    footer = """
-        };
-    in import <nixpkgs> (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
+    footer = f"""
+        }};
+    in import nixpkgs (args // {{ overlays = [ pypi2nixOverlay ] ++ overlays; }})
     """
 
     parts = [header]
