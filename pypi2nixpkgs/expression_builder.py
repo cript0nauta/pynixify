@@ -11,7 +11,7 @@ def build_nix_expression(
         requirements: ChosenPackageRequirements,
         sha256: str
     ) -> str:
-    non_python_dependencies = ['fetchPypi', 'buildPythonPackage']
+    non_python_dependencies = ['lib', 'fetchPypi', 'buildPythonPackage']
     runtime_requirements: List[str] = [
             p.attr for p in requirements.runtime_requirements]
     build_requirements: List[str] = [
@@ -23,7 +23,7 @@ def build_nix_expression(
     version = str(package.version)
     if package.local_source:
         src_part = f"""
-            src = {package.local_source.resolve()};
+            src = lib.cleanSource ../..;
         """
     else:
         src_part = f"""
@@ -67,7 +67,7 @@ def build_overlayed_nixpkgs(overlays: Mapping[str, Path]) -> str:
     for (package_name, path) in overlays.items():
         parts.append(f"""
             {package_name} =
-                self.callPackage {path.resolve()} {{ }};
+                self.callPackage {'' if path.is_absolute() else './'}{path} {{ }};
         """)
 
     parts.append(footer)

@@ -21,6 +21,7 @@ from .test_version_chooser import (
 DEFAULT_ARGS = {
     'fetchPypi': 'a: a',
     'buildPythonPackage': 'a: a',
+    'lib': 'a: a',
 }
 
 NO_REQUIREMENTS = ChosenPackageRequirements(

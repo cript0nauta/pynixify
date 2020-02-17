@@ -70,6 +70,7 @@ async def _main_async(requirements, local: Optional[str]):
         expression_path = (packages_path / f'{package.pypi_name}.nix')
         with expression_path.open('w') as fp:
             fp.write(expr)
+        expression_path = expression_path.relative_to(base_path)
         overlays[package.attr] = expression_path
 
 
