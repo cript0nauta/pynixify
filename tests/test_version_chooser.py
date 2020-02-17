@@ -271,6 +271,26 @@ async def test_chosen_package_requirements():
 
 
 @pytest.mark.asyncio
+async def test_chosen_package_requirements_marker():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    req = Requirement("notexistent; python_version<'3'")
+    reqs_f = dummy_package_requirements({
+        "sampleproject": ([req], [], [req]),
+    })
+    c = VersionChooser(nixpkgs, pypi, reqs_f)
+    await c.require(Requirement('sampleproject'))
+    sampleproject = c.package_for('sampleproject')
+    reqs: PackageRequirements = await reqs_f(sampleproject)
+
+    chosen: ChosenPackageRequirements
+    chosen = ChosenPackageRequirements.from_package_requirements(
+        reqs, c)
+
+    assert len(chosen.runtime_requirements) == 0
+
+
+@pytest.mark.asyncio
 async def test_chosen_package_requirements_fails():
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))

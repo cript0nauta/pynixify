@@ -140,6 +140,8 @@ class ChosenPackageRequirements:
         # need to be included in the version chooser
         kwargs['build_requirements'] = []
         for req in package_requirements.build_requirements:
+            if req.marker and not req.marker.evaluate():
+                continue
             package_ = max(
                 version_chooser.nixpkgs_data.from_requirement(req),
                 key=operator.attrgetter('version')
@@ -152,6 +154,8 @@ class ChosenPackageRequirements:
         # runtime_requirements uses the packages in the version chooser
         packages: List[Package] = []
         for req in package_requirements.runtime_requirements:
+            if req.marker and not req.marker.evaluate():
+                continue
             package = version_chooser.package_for(req.name)
             if package is None:
                 raise PackageNotFound(
