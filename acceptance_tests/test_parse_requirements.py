@@ -1,6 +1,8 @@
 import os
 import shutil
 import pytest
+import tempfile
+from pathlib import Path
 from packaging.requirements import Requirement
 from pypi2nixpkgs.pypi_api import (
     PyPIData,
@@ -20,3 +22,21 @@ async def test_eval_package_requirements():
     assert len(reqs.build_requirements) == 3
     assert len(reqs.test_requirements) == 2
     assert len(reqs.runtime_requirements) == 9
+
+
+@pytest.mark.asyncio
+async def test_package_with_tuple_requirements():
+    with tempfile.TemporaryDirectory() as dirname:
+        with (Path(dirname) / 'setup.py').open('w') as fp:
+            fp.write("""
+from setuptools import setup
+setup(
+    setup_requires=('setuptools_scm',),
+    tests_require=('pytest', 'pytest-cov'),
+    install_requires=('flask', 'jinja', 'werkzeug'),
+)
+            """)
+        reqs = await eval_path_requirements(Path(dirname))
+        assert len(reqs.build_requirements) == 1
+        assert len(reqs.test_requirements) == 2
+        assert len(reqs.runtime_requirements) == 3
