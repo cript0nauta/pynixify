@@ -56,3 +56,9 @@ teardown(){
     fi
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.psycopg2
 }
+
+@test "--output-dir" {
+    pypi2nixpkgs sampleproject==1.3.1 --output-dir my-pypi2nixpkgs-dir
+    nix-build my-pypi2nixpkgs-dir/nixpkgs.nix -A python3.pkgs.sampleproject
+    ./result/bin/sample | grep 'Call your main'
+}

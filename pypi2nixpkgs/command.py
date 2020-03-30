@@ -40,10 +40,15 @@ async def _build_version_chooser() -> VersionChooser:
 @click.argument('requirements', nargs=-1)
 @click.option('--local', nargs=1)
 @click.option('--nixpkgs', nargs=1)
+@click.option('--output-dir', nargs=1)
 def main(**kwargs):
     asyncio.run(_main_async(**kwargs))
 
-async def _main_async(requirements, local: Optional[str], nixpkgs: Optional[str]):
+async def _main_async(
+        requirements,
+        local: Optional[str],
+        nixpkgs: Optional[str],
+        output_dir: Optional[str]):
 
     if nixpkgs is not None:
         pypi2nixpkgs.nixpkgs_sources.NIXPKGS_URL = nixpkgs
@@ -56,7 +61,8 @@ async def _main_async(requirements, local: Optional[str], nixpkgs: Optional[str]
     for req in requirements:
         await version_chooser.require(Requirement(req))
 
-    base_path = Path.cwd() / 'pypi2nixpkgs'
+    output_dir = output_dir or 'pypi2nixpkgs'
+    base_path = Path.cwd() / output_dir
     packages_path = base_path / 'packages'
     packages_path.mkdir(parents=True, exist_ok=True)
 
