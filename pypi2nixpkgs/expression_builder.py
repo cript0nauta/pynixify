@@ -17,7 +17,7 @@ def build_nix_expression(
     build_requirements: List[str] = [
             p.attr for p in requirements.build_requirements]
 
-    args: Set[str]
+    args: List[str]
     args = sorted(set(
         non_python_dependencies + runtime_requirements +
         build_requirements))
