@@ -18,7 +18,9 @@ def build_nix_expression(
             p.attr for p in requirements.build_requirements]
 
     args: Set[str]
-    args = set(non_python_dependencies + runtime_requirements + build_requirements)
+    args = sorted(set(
+        non_python_dependencies + runtime_requirements +
+        build_requirements))
 
     version = str(package.version)
     if package.local_source:
