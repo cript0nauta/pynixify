@@ -9,7 +9,10 @@ from pypi2nixpkgs.nixpkgs_sources import (
 from pypi2nixpkgs.pypi_api import (
     PyPIData,
 )
-from pypi2nixpkgs.expression_builder import build_nix_expression
+from pypi2nixpkgs.expression_builder import (
+    build_nix_expression,
+    nixfmt
+)
 from .test_pypi_api import DummyCache, SAMPLEPROJECT_DATA
 from .test_version_chooser import (
     NIXPKGS_JSON,
@@ -92,3 +95,10 @@ async def test_call(version_chooser):
         NO_REQUIREMENTS,
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"
+
+
+@pytest.mark.usesnix
+@pytest.mark.asyncio
+async def test_nixfmt():
+    expr = await nixfmt('{}: 1 + 1')
+    assert await is_valid_nix(expr)

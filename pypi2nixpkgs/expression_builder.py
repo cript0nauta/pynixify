@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Iterable, Mapping, List, Set, Optional, Tuple
 from pypi2nixpkgs.version_chooser import (
@@ -93,3 +94,18 @@ def build_overlayed_nixpkgs(
 
     parts.append(footer)
     return '\n'.join(parts)
+
+
+async def nixfmt(expr: str) -> str:
+    proc = await asyncio.create_subprocess_exec(
+        'nixfmt',
+        stdout=asyncio.subprocess.PIPE,
+        stdin=asyncio.subprocess.PIPE,
+    )
+    proc.stdin.write(expr.encode())  # type: ignore
+    proc.stdin.write_eof()  # type: ignore
+    (stdout, _) = await proc.communicate()
+    status = await proc.wait()
+    if status:
+        raise TypeError(f'nixfmt failed')
+    return stdout.decode()

@@ -19,6 +19,7 @@ from pypi2nixpkgs.version_chooser import (
 from pypi2nixpkgs.expression_builder import (
     build_nix_expression,
     build_overlayed_nixpkgs,
+    nixfmt,
 )
 from pypi2nixpkgs.pypi_api import (
     PyPIPackage,
@@ -81,7 +82,7 @@ async def _main_async(
             package, reqs, sha256)
         expression_path = (packages_path / f'{package.pypi_name}.nix')
         with expression_path.open('w') as fp:
-            fp.write(expr)
+            fp.write(await nixfmt(expr))
         expression_path = expression_path.relative_to(base_path)
         overlays[package.attr] = expression_path
 
@@ -92,7 +93,7 @@ async def _main_async(
         else:
             sha256 = await get_url_hash(nixpkgs)
             expr = build_overlayed_nixpkgs(overlays, (nixpkgs, sha256))
-        fp.write(expr)
+        fp.write(await nixfmt(expr))
 
 
 
