@@ -120,7 +120,8 @@ async def test_build_sampleproject_expression():
         test_requirements=[],
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
-    expr = build_nix_expression(package, reqs, sha256)
+    meta = await package.metadata()
+    expr = build_nix_expression(package, reqs, meta, sha256)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
@@ -151,8 +152,9 @@ async def test_build_sampleproject_nixpkgs():
         test_requirements=[],
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
+    meta = await package.metadata()
     sampleproject_expr = build_nix_expression(
-        package, reqs, sha256)
+        package, reqs, meta, sha256)
 
     with tempfile.NamedTemporaryFile(suffix='.nix') as fp:
         fp.write(sampleproject_expr.encode())

@@ -4,6 +4,7 @@ import pytest
 import tempfile
 from pathlib import Path
 from packaging.requirements import Requirement
+from pypi2nixpkgs.base import PackageMetadata
 from pypi2nixpkgs.pypi_api import (
     PyPIData,
     PyPICache,
@@ -22,6 +23,9 @@ async def test_eval_package_requirements():
     assert len(reqs.build_requirements) == 3
     assert len(reqs.test_requirements) == 2
     assert len(reqs.runtime_requirements) == 9
+    meta: PackageMetadata = await package.metadata()
+    assert meta.url == 'https://github.com/infobyte/faraday_agent_dispatcher'
+    assert meta.description == 'Faraday agent dispatcher to communicate an agent to faraday'
 
 
 @pytest.mark.asyncio

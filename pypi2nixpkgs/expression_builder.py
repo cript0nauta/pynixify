@@ -6,6 +6,7 @@ from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
 )
+from pypi2nixpkgs.base import PackageMetadata
 from pypi2nixpkgs.pypi_api import PyPIPackage
 
 expression_template = Template("""
@@ -28,6 +29,15 @@ expression_template = Template("""
 
         buildInputs = [ ${' '.join(build_requirements)} ];
         propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
+
+        meta = {
+            % if metadata.description:
+                description = "${metadata.description}";
+            % endif
+            % if metadata.url:
+                homepage = "${metadata.url}";
+            % endif
+        };
     }
 """)
 
@@ -64,7 +74,8 @@ overlayed_nixpkgs_template = Template("""
 def build_nix_expression(
         package: PyPIPackage,
         requirements: ChosenPackageRequirements,
-        sha256: str
+        metadata: PackageMetadata,
+        sha256: str,
     ) -> str:
     non_python_dependencies = ['lib', 'fetchPypi', 'buildPythonPackage']
     runtime_requirements: List[str] = [

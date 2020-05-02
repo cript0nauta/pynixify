@@ -82,8 +82,9 @@ async def _main_async(
         if package.local_source is None:
             sources.append(await package.source())
         sha256 = await get_path_hash(await package.source())
+        meta = await package.metadata()
         expr = build_nix_expression(
-            package, reqs, sha256)
+            package, reqs, meta, sha256)
         expression_path = (packages_path / f'{package.pypi_name}.nix')
         with expression_path.open('w') as fp:
             fp.write(await nixfmt(expr))

@@ -17,6 +17,7 @@ teardown(){
     # Temporary files should be removed
     echo ${TMPDIR}/pypi2nixpkgs_*
     [[ -z "$(find "${TMPDIR}" -maxdepth 1 -name 'pypi2nixpkgs_*' -print -quit)" ]]
+    grep "A sample Python project" pypi2nixpkgs/packages/sampleproject.nix
 }
 
 @test "sampleproject-local" {

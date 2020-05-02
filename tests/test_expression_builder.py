@@ -2,6 +2,7 @@ import asyncio
 import pytest
 from typing import List
 from packaging.requirements import Requirement
+from pypi2nixpkgs.base import PackageMetadata
 from pypi2nixpkgs.version_chooser import VersionChooser
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
@@ -33,9 +34,17 @@ NO_REQUIREMENTS = ChosenPackageRequirements(
     runtime_requirements=[]
 )
 
+NO_METADATA = PackageMetadata(
+    url=None,
+    description=None,
+    license=None,
+)
 
-async def is_valid_nix(expr: str, **kwargs) -> bool:
+
+async def is_valid_nix(expr: str, attr=None, **kwargs) -> bool:
     extra_args: List[str] = []
+    if attr is not None:
+        extra_args += ['--attr', attr]
     for (k, v) in kwargs.items():
         extra_args += ['--arg', k, v]
 
@@ -64,6 +73,7 @@ async def test_compiles(version_chooser):
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
+        NO_METADATA,
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
 
@@ -82,6 +92,7 @@ async def test_duplicate_parameter(version_chooser):
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
         requirements,
+        NO_METADATA,
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
 
@@ -93,6 +104,7 @@ async def test_call(version_chooser):
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
+        NO_METADATA,
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"
 
@@ -102,3 +114,21 @@ async def test_call(version_chooser):
 async def test_nixfmt():
     expr = await nixfmt('{}: 1 + 1')
     assert await is_valid_nix(expr)
+
+@pytest.mark.usesnix
+@pytest.mark.asyncio
+async def test_metadata(version_chooser):
+    await version_chooser.require(Requirement("sampleproject"))
+    result = build_nix_expression(
+        version_chooser.package_for('sampleproject'),
+        NO_REQUIREMENTS,
+        sha256='aaaaaa',
+        metadata=PackageMetadata(
+            description='test',
+            url=None,
+            license=None,
+        ))
+    assert await is_valid_nix(
+        result,
+        attr='meta.description',
+        **DEFAULT_ARGS), "Invalid Nix expression"

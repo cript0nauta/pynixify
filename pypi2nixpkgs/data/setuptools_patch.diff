@@ -1,8 +1,8 @@
 diff --git a/setuptools/__init__.py b/setuptools/__init__.py
-index a71b2bbd..29faefa7 100644
+index a71b2bbd..400952d9 100644
 --- a/setuptools/__init__.py
 +++ b/setuptools/__init__.py
-@@ -139,10 +139,33 @@ def _install_setup_requires(attrs):
+@@ -139,10 +139,42 @@ def _install_setup_requires(attrs):
          dist.fetch_build_eggs(dist.setup_requires)
  
  
@@ -33,6 +33,15 @@ index a71b2bbd..29faefa7 100644
 +                    fp.write(requirements)
 +                else:
 +                    fp.write('\n'.join(requirements))
++
++        import json
++        meta = {}
++        meta_attrs = {'description', 'url', 'license'}
++        for meta_attr in meta_attrs:
++            meta[meta_attr] = attrs.get(meta_attr)
++        with (out / 'meta.json').open('w') as fp:
++            json.dump(meta, fp)
++
 +    else:
 +        # Make sure we have any requirements needed to interpret 'attrs'.
 +        _install_setup_requires(attrs)
