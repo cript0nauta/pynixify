@@ -1,11 +1,65 @@
 import asyncio
 from pathlib import Path
 from typing import Iterable, Mapping, List, Set, Optional, Tuple
+from mako.template import Template
 from pypi2nixpkgs.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
 )
 from pypi2nixpkgs.pypi_api import PyPIPackage
+
+expression_template = Template("""
+    { ${', '.join(args)} }:
+    buildPythonPackage rec {
+        pname = "${package.pypi_name}";
+        version = "${version}";
+
+        % if package.local_source:
+            src = lib.cleanSource ../..;
+        % else:
+            src = builtins.fetchurl {
+                url = "${package.download_url}";
+                sha256 = "${sha256}";
+            };
+        % endif
+
+        # TODO FIXME
+        doCheck = false;
+
+        buildInputs = [ ${' '.join(build_requirements)} ];
+        propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
+    }
+""")
+
+overlayed_nixpkgs_template = Template("""
+    { overlays ? [ ], ... }@args:
+    let
+        pypi2nixOverlay = self: super: {
+            python3 = super.python3.override { inherit packageOverrides; };
+        };
+
+        nixpkgs =
+            % if nixpkgs is None:
+                <nixpkgs>;
+            % else:
+                <% (url, sha256) = nixpkgs %>
+                builtins.fetchTarball {
+                    url = "${url}";
+                    sha256 = "${sha256}";
+                };
+            % endif
+
+        packageOverrides = self: super: {
+            % for (package_name, path) in overlays.items():
+                ${package_name} =
+                    self.callPackage
+                        ${'' if path.is_absolute() else './'}${path} {};
+
+            % endfor
+        };
+
+    in import nixpkgs (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
+""")
 
 def build_nix_expression(
         package: PyPIPackage,
@@ -24,76 +78,14 @@ def build_nix_expression(
         build_requirements))
 
     version = str(package.version)
-    if package.local_source:
-        src_part = f"""
-            src = lib.cleanSource ../..;
-        """
-    else:
-        src_part = f"""
-            src = builtins.fetchurl {{
-                url = "{package.download_url}";
-                sha256 = "{sha256}";
-            }};
-        """
-    return f"""
-    {{ {', '.join(args)} }}:
-    buildPythonPackage rec {{
-        pname = "{package.pypi_name}";
-        version = "{version}";
-{src_part}
-
-        # TODO FIXME
-        doCheck = false;
-
-        buildInputs = [{' '.join(build_requirements)}];
-        propagatedBuildInputs = [{' '.join(runtime_requirements)}];
-    }}
-    """
+    return expression_template.render(**locals())
 
 
 def build_overlayed_nixpkgs(
         overlays: Mapping[str, Path],
         nixpkgs: Optional[Tuple[str, str]] = None
         ) -> str:
-    if nixpkgs is None:
-        nixpkgs_expression = f"""
-            nixpkgs =
-                <nixpkgs>;
-        """
-    else:
-        (url, sha256) = nixpkgs
-        nixpkgs_expression = f"""
-            nixpkgs =
-                builtins.fetchTarball {{
-                    url = {url};
-                    sha256 = "{sha256}";
-                }};
-        """
-    header = f"""{{ overlays ? [ ], ...}}@args:
-    let
-        pypi2nixOverlay = self: super: {{
-            python3 = super.python3.override {{ inherit packageOverrides; }};
-        }};
-
-        {nixpkgs_expression}
-
-        packageOverrides = self: super: {{
-    """
-    footer = f"""
-        }};
-    in import nixpkgs (args // {{ overlays = [ pypi2nixOverlay ] ++ overlays; }})
-    """
-
-    parts = [header]
-
-    for (package_name, path) in overlays.items():
-        parts.append(f"""
-            {package_name} =
-                self.callPackage {'' if path.is_absolute() else './'}{path} {{ }};
-        """)
-
-    parts.append(footer)
-    return '\n'.join(parts)
+    return overlayed_nixpkgs_template.render(**locals())
 
 
 async def nixfmt(expr: str) -> str:
