@@ -1,3 +1,4 @@
+import os
 import click
 import asyncio
 from pathlib import Path
@@ -68,6 +69,7 @@ async def _main_async(
     packages_path.mkdir(parents=True, exist_ok=True)
 
     overlays: Dict[str, Path] = {}
+    sources: List[Path] = []
     package: PyPIPackage
     for package in version_chooser.all_pypi_packages():
 
@@ -77,6 +79,8 @@ async def _main_async(
             version_chooser
         )
 
+        if package.local_source is None:
+            sources.append(await package.source())
         sha256 = await get_path_hash(await package.source())
         expr = build_nix_expression(
             package, reqs, sha256)
@@ -94,6 +98,9 @@ async def _main_async(
             sha256 = await get_url_hash(nixpkgs)
             expr = build_overlayed_nixpkgs(overlays, (nixpkgs, sha256))
         fp.write(await nixfmt(expr))
+
+    for source in sources:
+        source.unlink()
 
 
 

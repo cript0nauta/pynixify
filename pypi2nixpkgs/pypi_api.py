@@ -35,10 +35,13 @@ class PyPIPackage(Package):
     pypi_name: str
     pypi_cache: ABCPyPICache
     local_source: Optional[Path] = None
+    _cached_downloaded_file: Optional[Path] = None
 
     async def source(self, extra_args=[]) -> Path:
         if self.local_source is not None:
             return self.local_source
+        if self._cached_downloaded_file is not None:
+            return self._cached_downloaded_file
         filename = tempfile.mktemp(
             prefix='pypi2nixpkgs_download',
             suffix=self.filename,
@@ -57,6 +60,7 @@ class PyPIPackage(Package):
                 f"SHA256 hash does not match. The hash of {self.download_url} "
                 f"should be {self.sha256} but it is {h.hexdigest()} instead."
             )
+        self._cached_downloaded_file = downloaded_file
         return downloaded_file
 
     @property

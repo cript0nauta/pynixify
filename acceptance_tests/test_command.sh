@@ -13,6 +13,10 @@ teardown(){
     pypi2nixpkgs sampleproject==1.3.1
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.sampleproject
     ./result/bin/sample | grep 'Call your main'
+
+    # Temporary files should be removed
+    echo ${TMPDIR}/pypi2nixpkgs_*
+    [[ -z "$(find "${TMPDIR}" -maxdepth 1 -name 'pypi2nixpkgs_*' -print -quit)" ]]
 }
 
 @test "sampleproject-local" {
