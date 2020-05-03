@@ -1,3 +1,4 @@
+import json
 import asyncio
 import pytest
 from typing import List
@@ -12,6 +13,7 @@ from pypi2nixpkgs.pypi_api import (
 )
 from pypi2nixpkgs.expression_builder import (
     build_nix_expression,
+    escape_string,
     nixfmt
 )
 from .test_pypi_api import DummyCache, SAMPLEPROJECT_DATA
@@ -57,6 +59,26 @@ async def is_valid_nix(expr: str, attr=None, **kwargs) -> bool:
     proc.stdin.write_eof()  # type: ignore
     status = await proc.wait()
     return status == 0
+
+
+async def nix_instantiate(expr: str, attr=None, **kwargs):
+    extra_args: List[str] = []
+    if attr is not None:
+        extra_args += ['--attr', attr]
+    for (k, v) in kwargs.items():
+        extra_args += ['--arg', k, v]
+
+    proc = await asyncio.create_subprocess_exec(
+        'nix-instantiate', '--json', '--eval', '-', *extra_args,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+    )
+    proc.stdin.write(expr.encode())  # type: ignore
+    proc.stdin.write_eof()  # type: ignore
+    stdout, stderr = await proc.communicate()
+    status = await proc.wait()
+    assert (await proc.wait()) == 0
+    return json.loads(stdout.decode())
 
 
 @pytest.fixture
@@ -119,16 +141,31 @@ async def test_nixfmt():
 @pytest.mark.asyncio
 async def test_metadata(version_chooser):
     await version_chooser.require(Requirement("sampleproject"))
+    desc = "${builtins.abort builtins.currentSystem}"
     result = build_nix_expression(
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
         sha256='aaaaaa',
         metadata=PackageMetadata(
-            description='test',
+            description=desc,
             url=None,
             license=None,
         ))
-    assert await is_valid_nix(
+    assert await nix_instantiate(
         result,
         attr='meta.description',
-        **DEFAULT_ARGS), "Invalid Nix expression"
+        **DEFAULT_ARGS) == desc
+
+@pytest.mark.usesnix
+@pytest.mark.asyncio
+@pytest.mark.parametrize('string', [
+    'test',
+    '\\',
+    '"',
+    "'",
+    'a\n',
+    '${builtins.abort builtins.currentSystem}',
+])
+async def test_escape_string(string):
+    expr = escape_string(string)
+    assert await nix_instantiate(expr) == string

@@ -12,14 +12,14 @@ from pypi2nixpkgs.pypi_api import PyPIPackage
 expression_template = Template("""
     { ${', '.join(args)} }:
     buildPythonPackage rec {
-        pname = "${package.pypi_name}";
-        version = "${version}";
+        pname = ${package.pypi_name | nix};
+        version = ${version | nix};
 
         % if package.local_source:
             src = lib.cleanSource ../..;
         % else:
             src = builtins.fetchurl {
-                url = "${package.download_url}";
+                url = ${package.download_url | nix};
                 sha256 = "${sha256}";
             };
         % endif
@@ -32,10 +32,10 @@ expression_template = Template("""
 
         meta = {
             % if metadata.description:
-                description = "${metadata.description}";
+                description = ${metadata.description | nix };
             % endif
             % if metadata.url:
-                homepage = "${metadata.url}";
+                homepage = ${metadata.url | nix};
             % endif
         };
     }
@@ -54,7 +54,7 @@ overlayed_nixpkgs_template = Template("""
             % else:
                 <% (url, sha256) = nixpkgs %>
                 builtins.fetchTarball {
-                    url = "${url}";
+                    url = ${url | nix};
                     sha256 = "${sha256}";
                 };
             % endif
@@ -89,6 +89,7 @@ def build_nix_expression(
         build_requirements))
 
     version = str(package.version)
+    nix = escape_string
     return expression_template.render(**locals())
 
 
@@ -96,6 +97,7 @@ def build_overlayed_nixpkgs(
         overlays: Mapping[str, Path],
         nixpkgs: Optional[Tuple[str, str]] = None
         ) -> str:
+    nix = escape_string
     return overlayed_nixpkgs_template.render(**locals())
 
 
@@ -112,3 +114,13 @@ async def nixfmt(expr: str) -> str:
     if status:
         raise TypeError(f'nixfmt failed')
     return stdout.decode()
+
+def escape_string(string: str) -> str:
+    # Based on the documentation in https://nixos.org/nix/manual/#idm140737322106128
+    string = string.replace('\\', '\\\\')
+    string = string.replace('"', '\\"')
+    string = string.replace('\n', '\\n')
+    string = string.replace('\t', '\\t')
+    string = string.replace('\r', '\\r')
+    string = string.replace('${', '\\${')
+    return f'"{string}"'
