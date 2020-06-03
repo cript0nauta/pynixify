@@ -98,6 +98,14 @@ def build_overlayed_nixpkgs(
         nixpkgs: Optional[Tuple[str, str]] = None
         ) -> str:
     nix = escape_string
+
+    # Sort dictionary keys to ensure pypi2nixpkgs/nixpkgs.nix will have the
+    # same contents in different pypi2nixpkgs runs.
+    overlays = {
+        k: overlays[k]
+        for k in sorted(overlays.keys())
+    }
+
     return overlayed_nixpkgs_template.render(**locals())
 
 
