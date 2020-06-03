@@ -69,9 +69,8 @@ async def _main_async(
     packages_path.mkdir(parents=True, exist_ok=True)
 
     overlays: Dict[str, Path] = {}
-    packages: List[PyPIPackage] = version_chooser.all_pypi_packages()
     package: PyPIPackage
-    for package in packages:
+    for package in version_chooser.all_pypi_packages():
 
         reqs: ChosenPackageRequirements
         reqs = ChosenPackageRequirements.from_package_requirements(
@@ -97,10 +96,6 @@ async def _main_async(
             sha256 = await get_url_hash(nixpkgs)
             expr = build_overlayed_nixpkgs(overlays, (nixpkgs, sha256))
         fp.write(await nixfmt(expr))
-
-    for package in packages:
-        await package.clean()
-
 
 
 async def get_url_hash(url: str) -> str:

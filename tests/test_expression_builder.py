@@ -10,6 +10,7 @@ from pypi2nixpkgs.nixpkgs_sources import (
 )
 from pypi2nixpkgs.pypi_api import (
     PyPIData,
+    nix_instantiate,
 )
 from pypi2nixpkgs.expression_builder import (
     build_nix_expression,
@@ -59,26 +60,6 @@ async def is_valid_nix(expr: str, attr=None, **kwargs) -> bool:
     proc.stdin.write_eof()  # type: ignore
     status = await proc.wait()
     return status == 0
-
-
-async def nix_instantiate(expr: str, attr=None, **kwargs):
-    extra_args: List[str] = []
-    if attr is not None:
-        extra_args += ['--attr', attr]
-    for (k, v) in kwargs.items():
-        extra_args += ['--arg', k, v]
-
-    proc = await asyncio.create_subprocess_exec(
-        'nix-instantiate', '--json', '--eval', '-', *extra_args,
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-    )
-    proc.stdin.write(expr.encode())  # type: ignore
-    proc.stdin.write_eof()  # type: ignore
-    stdout, stderr = await proc.communicate()
-    status = await proc.wait()
-    assert (await proc.wait()) == 0
-    return json.loads(stdout.decode())
 
 
 @pytest.fixture

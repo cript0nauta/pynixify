@@ -1,10 +1,10 @@
 import os
+import json
 import asyncio
 import hashlib
-import tempfile
 import aiohttp
 import aiofiles
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 from pathlib import Path
 from dataclasses import dataclass, field
 from urllib.parse import urlunparse
@@ -25,7 +25,7 @@ class ABCPyPICache(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    async def fetch_url(self, url: str, filename: str) -> Path:
+    async def fetch_url(self, url: str, sha256: str) -> Path:
         pass
 
 
@@ -36,20 +36,12 @@ class PyPIPackage(Package):
     pypi_name: str
     pypi_cache: ABCPyPICache
     local_source: Optional[Path] = None
-    _cached_downloaded_file: Optional[Path] = None
-    _temp_dir: tempfile.TemporaryDirectory = field(
-        default_factory=tempfile.TemporaryDirectory,
-        init=False,
-    )
 
     async def source(self, extra_args=[]) -> Path:
         if self.local_source is not None:
             return self.local_source
-        if self._cached_downloaded_file is not None:
-            return self._cached_downloaded_file
-        filename = Path(self._temp_dir.name) / self.filename
         downloaded_file: Path = await self.pypi_cache.fetch_url(
-            self.download_url, filename)
+            self.download_url, self.sha256)
         h = hashlib.sha256()
         with downloaded_file.open('rb') as fp:
             while True:
@@ -64,9 +56,6 @@ class PyPIPackage(Package):
             )
         self._cached_downloaded_file = downloaded_file
         return downloaded_file
-
-    async def clean(self):
-        self._temp_dir.cleanup()
 
     @property
     def filename(self):
@@ -110,16 +99,37 @@ class PyPICache:
             async with session.get(url) as response:
                 return await response.json()
 
-    async def fetch_url(self, url, filename):
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
-            async with session.get(url) as response:
-                async with aiofiles.open(filename, 'wb') as fp:
-                    while True:
-                        data = await response.content.read(65535)
-                        if not data:
-                            break
-                        await fp.write(data)
-                return Path(filename)
+    async def fetch_url(self, url, sha256) -> Path:
+        from pypi2nixpkgs.expression_builder import escape_string
+        expr = f"""
+            builtins.fetchurl {{
+                url = {escape_string(url)};
+                sha256 = {escape_string(sha256)};
+            }}
+        """
+        result = await nix_instantiate(expr)
+        assert isinstance(result, str)
+        return Path(result)
+
+
+async def nix_instantiate(expr: str, attr=None, **kwargs):
+    extra_args: List[str] = []
+    if attr is not None:
+        extra_args += ['--attr', attr]
+    for (k, v) in kwargs.items():
+        extra_args += ['--arg', k, v]
+
+    proc = await asyncio.create_subprocess_exec(
+        'nix-instantiate', '--json', '--eval', '-', *extra_args,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+    )
+    proc.stdin.write(expr.encode())  # type: ignore
+    proc.stdin.write_eof()  # type: ignore
+    stdout, stderr = await proc.communicate()
+    status = await proc.wait()
+    assert (await proc.wait()) == 0
+    return json.loads(stdout.decode())
 
 
 async def get_path_hash(path: Path) -> str:

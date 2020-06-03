@@ -10,6 +10,7 @@ from pypi2nixpkgs.exceptions import (
 )
 from pypi2nixpkgs.pypi_api import (
     ABCPyPICache,
+    PyPICache,
     PyPIData,
     PyPIPackage,
     get_path_hash,
@@ -28,7 +29,7 @@ class DummyCache(ABCPyPICache):
         except KeyError:
             raise PackageNotFound()
 
-    async def fetch_url(self, url, filename) -> Path:
+    async def fetch_url(self, url, sha256) -> Path:
         raise NotImplementedError()
 
 
@@ -64,7 +65,7 @@ async def test_invalid_package():
 @pytest.mark.asyncio
 async def test_fetch_blob():
     class Cache(DummyCache):
-        async def fetch_url(self, url, filename) -> Path:
+        async def fetch_url(self, url, sha256) -> Path:
             return Path(__file__).parent / "sampleproject_response.json"
 
     p = PyPIPackage(
@@ -80,7 +81,7 @@ async def test_fetch_blob():
 @pytest.mark.asyncio
 async def test_fetch_blob_fails():
     class Cache(DummyCache):
-        async def fetch_url(self, url, filename) -> Path:
+        async def fetch_url(self, url, sha256) -> Path:
             return Path('/dev/null')
 
     p = PyPIPackage(
@@ -111,3 +112,14 @@ async def test_get_path_hash():
     path = (Path(__file__).parent / "random_file")
     hash_ = await get_path_hash(path)
     assert hash_ == '0adj0mj17yafd2imz49v3qklys2h8zf4hh443sx0ql8xibf8wpzq'
+
+
+@pytest.mark.usesnix
+@pytest.mark.asyncio
+async def test_content_addressable_pypi_cache():
+    cache = PyPICache()
+    sha256 = 'f85f8edc8a1d510cba1e844048dc4750684f271e3b915fa3684ef9136405b229'  # sha256sum of ranodm_file
+    path: Path = await cache.fetch_url(
+        'http://ignoreme.com/random_file', sha256)
+    assert path == Path('/nix/store/678nlplmwnm46ian5jh0yb3q7y7hj9vr-random_file')
+    assert path.exists()
