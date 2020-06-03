@@ -1,3 +1,4 @@
+import os
 import asyncio
 import hashlib
 import tempfile
@@ -62,6 +63,11 @@ class PyPIPackage(Package):
             )
         self._cached_downloaded_file = downloaded_file
         return downloaded_file
+
+    async def clean(self):
+        if self.local_source is not None:
+            return
+        os.unlink(await self.source())
 
     @property
     def filename(self):
