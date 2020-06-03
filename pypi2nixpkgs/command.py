@@ -60,8 +60,10 @@ async def _main_async(
     if local is not None:
         await version_chooser.require_local(local, Path.cwd())
 
-    for req in requirements:
-        await version_chooser.require(Requirement(req))
+    await asyncio.gather(*(
+        version_chooser.require(Requirement(req))
+        for req in requirements
+    ))
 
     output_dir = output_dir or 'pypi2nixpkgs'
     base_path = Path.cwd() / output_dir
@@ -70,8 +72,8 @@ async def _main_async(
 
     overlays: Dict[str, Path] = {}
     package: PyPIPackage
-    for package in version_chooser.all_pypi_packages():
 
+    async def write_package_expression(package: PyPIPackage):
         reqs: ChosenPackageRequirements
         reqs = ChosenPackageRequirements.from_package_requirements(
             await evaluate_package_requirements(package),
@@ -88,6 +90,10 @@ async def _main_async(
         expression_path = expression_path.relative_to(base_path)
         overlays[package.attr] = expression_path
 
+    await asyncio.gather(*(
+        write_package_expression(package)
+        for package in version_chooser.all_pypi_packages()
+    ))
 
     with (base_path / 'nixpkgs.nix').open('w') as fp:
         if nixpkgs is None:
