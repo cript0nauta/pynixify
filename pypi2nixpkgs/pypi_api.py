@@ -6,7 +6,7 @@ import aiohttp
 import aiofiles
 from typing import Sequence, Optional
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urlunparse
 from abc import ABCMeta, abstractmethod
 from urllib.parse import quote, urlparse
@@ -37,16 +37,17 @@ class PyPIPackage(Package):
     pypi_cache: ABCPyPICache
     local_source: Optional[Path] = None
     _cached_downloaded_file: Optional[Path] = None
+    _temp_dir: tempfile.TemporaryDirectory = field(
+        default_factory=tempfile.TemporaryDirectory,
+        init=False,
+    )
 
     async def source(self, extra_args=[]) -> Path:
         if self.local_source is not None:
             return self.local_source
         if self._cached_downloaded_file is not None:
             return self._cached_downloaded_file
-        filename = tempfile.mktemp(
-            prefix='pypi2nixpkgs_download',
-            suffix=self.filename,
-        )
+        filename = Path(self._temp_dir.name) / self.filename
         downloaded_file: Path = await self.pypi_cache.fetch_url(
             self.download_url, filename)
         h = hashlib.sha256()
@@ -65,9 +66,7 @@ class PyPIPackage(Package):
         return downloaded_file
 
     async def clean(self):
-        if self.local_source is not None:
-            return
-        os.unlink(await self.source())
+        self._temp_dir.cleanup()
 
     @property
     def filename(self):
