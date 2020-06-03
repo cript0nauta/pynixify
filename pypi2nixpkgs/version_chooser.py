@@ -1,3 +1,4 @@
+import asyncio
 import operator
 from pathlib import Path
 from dataclasses import dataclass
@@ -83,8 +84,10 @@ class VersionChooser:
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
-        for req in reqs.runtime_requirements:
-            await self.require(req, coming_from=pkg)
+        await asyncio.gather(*(
+            self.require(req, coming_from=pkg)
+            for req in reqs.runtime_requirements
+        ))
         # for req in reqs.test_requirements:
         #     if canonicalize_name(req.name) in self._choosed_packages:
         #         continue
