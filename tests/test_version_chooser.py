@@ -141,22 +141,18 @@ async def test_uses_runtime_dependencies():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('load_tests', [True, False])
-async def test_test_dependencies(load_tests):
+async def test_test_dependencies():
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     c = VersionChooser(
         nixpkgs, dummy_pypi,
-        should_load_tests=lambda _: load_tests,
+        should_load_tests=lambda _: False,
         req_evaluate=dummy_package_requirements({
             "django_2_2": ([], [Requirement('pytest')], []),
         }
     ))
     await c.require(Requirement('django>=2.2'))
     assert c.package_for('django')
-    if load_tests:
-        assert c.package_for('pytest') is not None
-    else:
-        assert c.package_for('pytest') is None
+    assert c.package_for('pytest') is None
 
 
 @pytest.mark.asyncio
@@ -194,12 +190,22 @@ async def test_circular_dependencies():
     assert c.package_for('itsdangerous')
 
 @pytest.mark.asyncio
-async def test_pypi_package():
+@pytest.mark.parametrize('load_tests', [True, False])
+async def test_pypi_package(load_tests):
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
-    c = VersionChooser(nixpkgs, pypi, dummy_package_requirements())
+    c = VersionChooser(
+        nixpkgs, pypi,
+        req_evaluate=dummy_package_requirements({
+            'sampleproject': ([], [Requirement('pytest')], []),
+        }),
+        should_load_tests=lambda _: load_tests)
     await c.require(Requirement('sampleproject'))
     assert_version(c, 'sampleproject', '1.3.1')
+    if load_tests:
+        assert c.package_for('pytest') is not None
+    else:
+        assert c.package_for('pytest') is None
 
 @pytest.mark.asyncio
 async def test_prefer_nixpkgs_older_version():
@@ -287,6 +293,24 @@ async def test_chosen_package_requirements(load_tests, require_pytest):
     assert len(chosen.runtime_requirements) == 1
     assert len(chosen.test_requirements) == int(load_tests)
     assert chosen.runtime_requirements[0] is c.package_for('flask')
+
+
+@pytest.mark.asyncio
+async def test_always_ignores_nixpkgs_test_requirements():
+    nixpkgs = NixpkgsData(NIXPKGS_JSON)
+    pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
+    reqs_f = dummy_package_requirements({
+        "sampleproject": ([], [Requirement('pytest')], [Requirement('flask')]),
+    })
+    def should_load_tests(package_name):
+        # Flask should be a NixPackage. We don't care about its test requirements
+        assert package_name != 'flask'
+        return True
+    c = VersionChooser(nixpkgs, pypi, reqs_f,
+                       should_load_tests=should_load_tests)
+    await c.require(Requirement('sampleproject'))
+    assert c.package_for('sampleproject')
+    assert c.package_for('pytest')
 
 
 @pytest.mark.asyncio

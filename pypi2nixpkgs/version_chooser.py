@@ -7,7 +7,7 @@ from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
 from pypi2nixpkgs.base import Package
-from pypi2nixpkgs.nixpkgs_sources import NixpkgsData
+from pypi2nixpkgs.nixpkgs_sources import NixpkgsData, NixPackage
 from pypi2nixpkgs.pypi_api import PyPIData, PyPIPackage
 from pypi2nixpkgs.package_requirements import (
     PackageRequirements,
@@ -86,7 +86,8 @@ class VersionChooser:
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
-        if not self.should_load_tests(canonicalize_name(r.name)):
+        if isinstance(pkg, NixPackage) or (
+                not self.should_load_tests(canonicalize_name(r.name))):
             reqs.test_requirements = []
 
         await asyncio.gather(*(

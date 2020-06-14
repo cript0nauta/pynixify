@@ -85,3 +85,14 @@ teardown(){
     git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb
     nix-shell ../pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3 --command py.test
 }
+
+@test "--load-all-test-requirements" {
+    pypi2nixpkgs --load-all-test-requirements 'textwrap3==0.9.1'
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
+    nix-store -qR result | { ! grep pytest; }
+    grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    git clone https://github.com/jonathaneunice/textwrap3
+    cd textwrap3
+    git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb
+    nix-shell ../pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3 --command py.test
+}
