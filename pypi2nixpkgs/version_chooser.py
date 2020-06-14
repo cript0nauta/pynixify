@@ -86,7 +86,7 @@ class VersionChooser:
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
-        if not self.should_load_tests(r.name):
+        if not self.should_load_tests(canonicalize_name(r.name)):
             reqs.test_requirements = []
 
         await asyncio.gather(*(

@@ -29,6 +29,7 @@ from pypi2nixpkgs.pypi_api import (
     get_path_hash,
 )
 from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 
 
 async def _build_version_chooser(
@@ -37,7 +38,9 @@ async def _build_version_chooser(
     pypi_cache = PyPICache()
     pypi_data = PyPIData(pypi_cache)
     def should_load_tests(package_name):
-        return package_name in load_test_requirements
+        return canonicalize_name(package_name) in [
+            canonicalize_name(n)
+            for n in load_test_requirements]
     version_chooser = VersionChooser(
         nixpkgs_data, pypi_data,
         req_evaluate=evaluate_package_requirements,

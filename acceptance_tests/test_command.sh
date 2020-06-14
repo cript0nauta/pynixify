@@ -76,7 +76,7 @@ teardown(){
 }
 
 @test "--load-test-requirements-for" {
-    pypi2nixpkgs --load-test-requirements-for=textwrap3 'textwrap3==0.9.1'
+    pypi2nixpkgs --load-test-requirements-for=teXtwrap3 'textwrap3==0.9.1'
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
     nix-store -qR result | { ! grep pytest; }
     grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
