@@ -32,6 +32,9 @@ class NixPackage(Package):
         args += extra_args
         return await run_nix_build(*args)
 
+    def __str__(self):
+        return f'NixPackage(attr={self.attr}, version={self.version})'
+
 
 class NixpkgsData:
     def __init__(self, data):

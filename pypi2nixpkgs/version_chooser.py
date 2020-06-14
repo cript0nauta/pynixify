@@ -47,8 +47,9 @@ class VersionChooser:
             self._choosed_packages[canonicalize_name(r.name)] = (pkg, specifier)
             if pkg.version not in specifier:
                 raise NoMatchingVersionFound(
-                    f'New requirement {r} does not match already installed '
-                    f'{r.name}=={str(pkg.version)}'
+                    f'New requirement '
+                    f'{r}{f" (from {coming_from})" if coming_from else ""} '
+                    f'does not match already installed {r.name}=={str(pkg.version)}'
                 )
             return
 
