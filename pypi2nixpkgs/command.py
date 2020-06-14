@@ -34,11 +34,17 @@ from packaging.utils import canonicalize_name
 
 async def _build_version_chooser(
         load_test_requirements_for: List[str],
+        ignore_test_requirements_for: List[str],
         load_all_test_requirements: bool) -> VersionChooser:
     nixpkgs_data = NixpkgsData(await load_nixpkgs_data({}))
     pypi_cache = PyPICache()
     pypi_data = PyPIData(pypi_cache)
     def should_load_tests(package_name):
+        if canonicalize_name(package_name) in [
+                canonicalize_name(n)
+                for n in ignore_test_requirements_for
+                ]:
+            return False
         return load_all_test_requirements or canonicalize_name(package_name) in [
             canonicalize_name(n)
             for n in load_test_requirements_for]
@@ -56,6 +62,7 @@ async def _build_version_chooser(
 @click.option('--nixpkgs', nargs=1)
 @click.option('--output-dir', nargs=1)
 @click.option('--load-test-requirements-for', multiple=True)
+@click.option('--ignore-test-requirements-for', multiple=True)
 @click.option('--load-all-test-requirements', is_flag=True)
 def main(**kwargs):
     asyncio.run(_main_async(**kwargs))
@@ -66,13 +73,15 @@ async def _main_async(
         nixpkgs: Optional[str],
         output_dir: Optional[str],
         load_test_requirements_for: List[str],
+        ignore_test_requirements_for: List[str],
         load_all_test_requirements: bool):
 
     if nixpkgs is not None:
         pypi2nixpkgs.nixpkgs_sources.NIXPKGS_URL = nixpkgs
 
     version_chooser: VersionChooser = await _build_version_chooser(
-        load_test_requirements_for, load_all_test_requirements)
+        load_test_requirements_for, ignore_test_requirements_for,
+        load_all_test_requirements)
 
     if local is not None:
         await version_chooser.require_local(local, Path.cwd())

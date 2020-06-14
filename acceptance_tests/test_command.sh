@@ -96,3 +96,12 @@ teardown(){
     git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb
     nix-shell ../pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3 --command py.test
 }
+
+@test "--ignore-test-requirements-for" {
+    # filedepot depends on boto3, which depends on botocore, which isn't
+    # compatible with the nixpkgs version of docutils (actually, it is, but it
+    # requires patching the source)
+    pypi2nixpkgs --load-all-test-requirements --ignore-test-requirements-for=filedepot \
+        docutils filedepot
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.filedepot
+}
