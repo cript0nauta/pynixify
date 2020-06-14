@@ -19,14 +19,16 @@ from pypi2nixpkgs.exceptions import (
 )
 
 class VersionChooser:
-    F_TYPE = Callable[[Package], Awaitable[PackageRequirements]]
     def __init__(self, nixpkgs_data: NixpkgsData, pypi_data: PyPIData,
-                 req_evaluate: F_TYPE):
+                 req_evaluate: Callable[[Package], Awaitable[PackageRequirements]],
+                 should_load_tests: Callable[[str], bool] = lambda _: False,
+                 ):
         self.nixpkgs_data = nixpkgs_data
         self.pypi_data = pypi_data
         self._choosed_packages: Dict[str, Tuple[Package, SpecifierSet]] = {}
         self._local_packages: Dict[str, Package] = {}
         self.evaluate_requirements = req_evaluate
+        self.should_load_tests = should_load_tests
 
     async def require(self, r: Requirement, coming_from: Package=None):
         pkg: Package
@@ -84,14 +86,13 @@ class VersionChooser:
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
+        if not self.should_load_tests(r.name):
+            reqs.test_requirements = []
+
         await asyncio.gather(*(
             self.require(req, coming_from=pkg)
-            for req in reqs.runtime_requirements
+            for req in (reqs.runtime_requirements + reqs.test_requirements)
         ))
-        # for req in reqs.test_requirements:
-        #     if canonicalize_name(req.name) in self._choosed_packages:
-        #         continue
-        #     await self.require(req)
 
     async def require_local(self, pypi_name: str, src: Path):
         assert pypi_name not in self._choosed_packages
@@ -136,7 +137,8 @@ class ChosenPackageRequirements:
     def from_package_requirements(
             cls,
             package_requirements: PackageRequirements,
-            version_chooser: VersionChooser):
+            version_chooser: VersionChooser,
+            load_tests: bool):
         kwargs: Any = {}
 
         # build_requirements uses packages from nixpkgs. The packages do not
@@ -151,11 +153,22 @@ class ChosenPackageRequirements:
             )
             kwargs['build_requirements'].append(package_)
 
-        # test_requirements is not implemented for now
-        kwargs['test_requirements'] = []
+        # tests_requirements uses the packages in the version chooser
+        packages: List[Package] = []
+        if load_tests:
+            for req in package_requirements.test_requirements:
+                if req.marker and not req.marker.evaluate():
+                    continue
+                package = version_chooser.package_for(req.name)
+                if package is None:
+                    raise PackageNotFound(
+                        f'Package {req.name} not found in the version chooser'
+                    )
+                packages.append(package)
+        kwargs['test_requirements'] = packages
 
         # runtime_requirements uses the packages in the version chooser
-        packages: List[Package] = []
+        packages = []
         for req in package_requirements.runtime_requirements:
             if req.marker and not req.marker.evaluate():
                 continue

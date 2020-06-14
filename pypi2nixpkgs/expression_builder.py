@@ -38,11 +38,19 @@ expression_template = Template("""
             };
         % endif
 
-        # TODO FIXME
-        doCheck = false;
+        % if test_requirements:
+            doCheck = true;
+            checkPhase = "true  # TODO fill with the real command for testing";
+        % else:
+            # TODO FIXME
+            doCheck = false;
+        % endif
 
         buildInputs = [ ${' '.join(build_requirements)} ];
         propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
+        % if test_requirements:
+            checkInputs = [ ${' '.join(test_requirements)} ];
+        % endif
 
         meta = {
             % if metadata.description:
@@ -97,11 +105,13 @@ def build_nix_expression(
             p.attr for p in requirements.runtime_requirements]
     build_requirements: List[str] = [
             p.attr for p in requirements.build_requirements]
+    test_requirements: List[str] = [
+            p.attr for p in requirements.test_requirements]
 
     args: List[str]
     args = sorted(set(
         non_python_dependencies + runtime_requirements +
-        build_requirements))
+        test_requirements + build_requirements))
 
     version = str(package.version)
     nix = escape_string

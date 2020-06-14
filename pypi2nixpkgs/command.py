@@ -31,12 +31,18 @@ from pypi2nixpkgs.pypi_api import (
 from packaging.requirements import Requirement
 
 
-async def _build_version_chooser() -> VersionChooser:
+async def _build_version_chooser(
+        load_test_requirements: List[str]) -> VersionChooser:
     nixpkgs_data = NixpkgsData(await load_nixpkgs_data({}))
     pypi_cache = PyPICache()
     pypi_data = PyPIData(pypi_cache)
+    def should_load_tests(package_name):
+        return package_name in load_test_requirements
     version_chooser = VersionChooser(
-        nixpkgs_data, pypi_data, evaluate_package_requirements)
+        nixpkgs_data, pypi_data,
+        req_evaluate=evaluate_package_requirements,
+        should_load_tests=should_load_tests,
+    )
     return version_chooser
 
 
@@ -45,6 +51,7 @@ async def _build_version_chooser() -> VersionChooser:
 @click.option('--local', nargs=1)
 @click.option('--nixpkgs', nargs=1)
 @click.option('--output-dir', nargs=1)
+@click.option('--load-test-requirements-for', multiple=True)
 def main(**kwargs):
     asyncio.run(_main_async(**kwargs))
 
@@ -52,12 +59,13 @@ async def _main_async(
         requirements,
         local: Optional[str],
         nixpkgs: Optional[str],
-        output_dir: Optional[str]):
+        output_dir: Optional[str],
+        load_test_requirements_for: List[str]):
 
     if nixpkgs is not None:
         pypi2nixpkgs.nixpkgs_sources.NIXPKGS_URL = nixpkgs
 
-    version_chooser: VersionChooser = await _build_version_chooser()
+    version_chooser: VersionChooser = await _build_version_chooser(load_test_requirements_for)
 
     if local is not None:
         await version_chooser.require_local(local, Path.cwd())
@@ -79,7 +87,8 @@ async def _main_async(
         reqs: ChosenPackageRequirements
         reqs = ChosenPackageRequirements.from_package_requirements(
             await evaluate_package_requirements(package),
-            version_chooser
+            version_chooser=version_chooser,
+            load_tests=version_chooser.should_load_tests(package.pypi_name),
         )
 
         sha256 = await get_path_hash(await package.source())
@@ -158,3 +167,6 @@ async def get_pypi_data(url: str, version: str, sha256: str) -> Tuple[str, str]:
     if newhash != sha256:
         raise RuntimeError(f'Invalid hash for URL: {url}')
     return (pname, ext)
+
+if __name__ == '__main__':
+    main()

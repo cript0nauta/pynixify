@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence
+from typing import List
 from dataclasses import dataclass
 from packaging.requirements import Requirement
 from pkg_resources import parse_requirements
@@ -9,9 +9,9 @@ from pypi2nixpkgs.exceptions import NixBuildError
 
 @dataclass
 class PackageRequirements:
-    build_requirements: Sequence[Requirement]
-    test_requirements: Sequence[Requirement]
-    runtime_requirements: Sequence[Requirement]
+    build_requirements: List[Requirement]
+    test_requirements: List[Requirement]
+    runtime_requirements: List[Requirement]
 
     @classmethod
     def from_result_path(cls, result_path: Path):

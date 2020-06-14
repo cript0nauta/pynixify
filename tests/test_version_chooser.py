@@ -141,15 +141,22 @@ async def test_uses_runtime_dependencies():
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail(reason='Test dependencies are not used for now')
-async def test_uses_test_dependencies():
+@pytest.mark.parametrize('load_tests', [True, False])
+async def test_test_dependencies(load_tests):
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
-    c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements({
-        "django_2_2": ([], [Requirement('pytest')], []),
-    }))
+    c = VersionChooser(
+        nixpkgs, dummy_pypi,
+        should_load_tests=lambda _: load_tests,
+        req_evaluate=dummy_package_requirements({
+            "django_2_2": ([], [Requirement('pytest')], []),
+        }
+    ))
     await c.require(Requirement('django>=2.2'))
     assert c.package_for('django')
-    assert c.package_for('pytest') is not None
+    if load_tests:
+        assert c.package_for('pytest') is not None
+    else:
+        assert c.package_for('pytest') is None
 
 
 @pytest.mark.asyncio
@@ -251,22 +258,34 @@ async def test_all_pypi_packages():
 
 
 @pytest.mark.asyncio
-async def test_chosen_package_requirements():
+@pytest.mark.parametrize(
+    'load_tests', [True, False],
+    ids=["Load test requirements", "Don't load test requirements"]
+)
+@pytest.mark.parametrize(
+    'require_pytest', [True, False],
+    ids=["Require pytest before sample project", "Don't require pytest directly"]
+)
+async def test_chosen_package_requirements(load_tests, require_pytest):
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     pypi = PyPIData(DummyCache(sampleproject=SAMPLEPROJECT_DATA))
     reqs_f = dummy_package_requirements({
-        "sampleproject": ([], [], [Requirement('flask')]),
+        "sampleproject": ([], [Requirement('pytest')], [Requirement('flask')]),
     })
-    c = VersionChooser(nixpkgs, pypi, reqs_f)
+    c = VersionChooser(nixpkgs, pypi, reqs_f,
+                       should_load_tests=lambda _: load_tests)
+    if require_pytest:
+        await c.require(Requirement('pytest'))
     await c.require(Requirement('sampleproject'))
     sampleproject = c.package_for('sampleproject')
     reqs: PackageRequirements = await reqs_f(sampleproject)
 
     chosen: ChosenPackageRequirements
     chosen = ChosenPackageRequirements.from_package_requirements(
-        reqs, c)
+        reqs, c, load_tests=load_tests)
 
     assert len(chosen.runtime_requirements) == 1
+    assert len(chosen.test_requirements) == int(load_tests)
     assert chosen.runtime_requirements[0] is c.package_for('flask')
 
 
@@ -285,7 +304,7 @@ async def test_chosen_package_requirements_marker():
 
     chosen: ChosenPackageRequirements
     chosen = ChosenPackageRequirements.from_package_requirements(
-        reqs, c)
+        reqs, c, load_tests=True)
 
     assert len(chosen.runtime_requirements) == 0
 
@@ -301,7 +320,8 @@ async def test_chosen_package_requirements_fails():
         runtime_requirements=[Requirement('invalid')]
     )
     with pytest.raises(PackageNotFound):
-        ChosenPackageRequirements.from_package_requirements(reqs, c)
+        ChosenPackageRequirements.from_package_requirements(
+            reqs, c, load_tests=True)
 
 
 @pytest.mark.asyncio

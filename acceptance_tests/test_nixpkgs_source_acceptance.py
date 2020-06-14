@@ -170,12 +170,13 @@ async def test_build_sampleproject_nixpkgs():
     async def f(pkg):
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('pytest'))
     await c.require(Requirement('sampleproject==1.3.1'))
     package: PyPIPackage = c.package_for('sampleproject')  # type: ignore
     sha256 = await get_path_hash(await package.source())
     reqs = ChosenPackageRequirements(
         build_requirements=[],
-        test_requirements=[],
+        test_requirements=[c.package_for('pytest')],  # type: ignore
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
     meta = await package.metadata()

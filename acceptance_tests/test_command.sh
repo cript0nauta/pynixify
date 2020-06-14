@@ -68,3 +68,20 @@ teardown(){
     nix-build my-pypi2nixpkgs-dir/nixpkgs.nix -A python3.pkgs.sampleproject
     ./result/bin/sample | grep 'Call your main'
 }
+
+@test "no --load-test-requirements-for" {
+    pypi2nixpkgs pytest 'textwrap3==0.9.1'
+    ! grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
+}
+
+@test "--load-test-requirements-for" {
+    pypi2nixpkgs --load-test-requirements-for=textwrap3 'textwrap3==0.9.1'
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
+    nix-store -qR result | { ! grep pytest; }
+    grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    git clone https://github.com/jonathaneunice/textwrap3
+    cd textwrap3
+    git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb
+    nix-shell ../pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3 --command py.test
+}
