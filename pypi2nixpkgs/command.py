@@ -1,8 +1,10 @@
+import re
 import os
 import click
 import asyncio
 from pathlib import Path
-from typing import List, Dict, Optional
+from urllib.parse import urlparse
+from typing import List, Dict, Optional, Tuple
 import pypi2nixpkgs.nixpkgs_sources
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
@@ -82,8 +84,18 @@ async def _main_async(
 
         sha256 = await get_path_hash(await package.source())
         meta = await package.metadata()
-        expr = build_nix_expression(
-            package, reqs, meta, sha256)
+        try:
+            (pname, ext) = await get_pypi_data(
+                package.download_url,
+                str(package.version),
+                sha256
+            )
+        except RuntimeError:
+            expr = build_nix_expression(
+                package, reqs, meta, sha256)
+        else:
+            expr = build_nix_expression(
+                package, reqs, meta, sha256, fetchPypi=(pname, ext))
         expression_path = (packages_path / f'{package.pypi_name}.nix')
         with expression_path.open('w') as fp:
             fp.write(await nixfmt(expr))
@@ -104,9 +116,14 @@ async def _main_async(
         fp.write(await nixfmt(expr))
 
 
-async def get_url_hash(url: str) -> str:
+async def get_url_hash(url: str, unpack=True) -> str:
+    cmd = ['nix-prefetch-url']
+    if unpack:
+        cmd.append('--unpack')
+    cmd.append(url)
+
     proc = await asyncio.create_subprocess_exec(
-        'nix-prefetch-url', '--unpack', url,
+        *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
     )
@@ -115,3 +132,29 @@ async def get_url_hash(url: str) -> str:
     if status != 0:
         raise RuntimeError(f'Could not get hash of URL: {url}')
     return stdout.decode().strip()
+
+
+async def get_pypi_data(url: str, version: str, sha256: str) -> Tuple[str, str]:
+    """Try to form a fetchPypi pname and extension to avoid using builtins.fetchurl.
+
+    If this fails, the generated expression will use builtins.fetchurl. It will
+    work perfectly, but the code of the expression won't be of nixpkgs quality.
+    Most Python expressions in nixpkgs use fetchPypi instead of raw
+    builtins.fetchurl, so our generated expression should do it too.
+    """
+    filename = Path(urlparse(url).path).name
+    match = re.match(
+        f'(?P<pname>.+)-{re.escape(version)}\\.(?P<ext>.+)',
+        filename
+    )
+    if match is None:
+        raise RuntimeError(f'Cannot build mirror://pypi URL from original URL: {url}')
+
+    pname, ext = match.group('pname'), match.group('ext')
+    # See <nixpkgs>/pkgs/development/python-modules/ansiwrap/default.nix
+    # "mirror://pypi/${builtins.substring 0 1 pname}/${pname}/${pname}-${version}.${extension}";
+    url = f'mirror://pypi/{pname[0]}/{pname}/{pname}-{version}.{ext}'
+    newhash = await get_url_hash(url, unpack=False)
+    if newhash != sha256:
+        raise RuntimeError(f'Invalid hash for URL: {url}')
+    return (pname, ext)

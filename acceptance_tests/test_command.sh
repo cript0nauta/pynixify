@@ -32,6 +32,7 @@ teardown(){
 @test "faraday-agent-dispatcher" {
     pypi2nixpkgs faraday-agent-dispatcher
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.faraday-agent-dispatcher
+    grep 'fetchPypi {' pypi2nixpkgs/packages/faraday-agent-dispatcher.nix
     ./result/bin/faraday-dispatcher --help
 }
 

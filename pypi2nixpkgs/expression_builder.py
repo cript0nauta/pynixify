@@ -17,7 +17,21 @@ expression_template = Template("""
 
         % if package.local_source:
             src = lib.cleanSource ../..;
+        % elif fetchPypi is not None:
+            src = fetchPypi {
+                % if fetchPypi[0] == package.pypi_name:
+                    inherit pname version;
+                % else:
+                    inherit version;
+                    pname = ${fetchPypi[0] | nix};
+                % endif
+                % if fetchPypi[1] != "tar.gz":
+                    extension = ${fetchPypi[1] | nix};
+                % endif
+                sha256 = "${sha256}";
+            };
         % else:
+            # TODO use fetchPypi
             src = builtins.fetchurl {
                 url = ${package.download_url | nix};
                 sha256 = "${sha256}";
@@ -76,6 +90,7 @@ def build_nix_expression(
         requirements: ChosenPackageRequirements,
         metadata: PackageMetadata,
         sha256: str,
+        fetchPypi: Optional[Tuple[str, str]] = None,
     ) -> str:
     non_python_dependencies = ['lib', 'fetchPypi', 'buildPythonPackage']
     runtime_requirements: List[str] = [

@@ -105,7 +105,10 @@ async def test_run_nix_build():
 
 
 @pytest.mark.asyncio
-async def test_build_sampleproject_expression():
+@pytest.mark.parametrize('fetchPypi', [
+        None, ('sampleproject', 'tar.gz'), ('./sampleproject', 'tar.gz')
+    ])
+async def test_build_sampleproject_expression(fetchPypi):
     data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
     nixpkgs = NixpkgsData(data)
     pypi = PyPIData(PyPICache())
@@ -121,7 +124,7 @@ async def test_build_sampleproject_expression():
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
     meta = await package.metadata()
-    expr = build_nix_expression(package, reqs, meta, sha256)
+    expr = build_nix_expression(package, reqs, meta, sha256, fetchPypi)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
@@ -135,6 +138,29 @@ async def test_build_sampleproject_expression():
     assert (await proc.wait()) == 0
     assert b'Call your main application code here' in stdout
 
+
+@pytest.mark.asyncio
+async def test_build_textwrap3_expression():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('textwrap3==0.9.2'))
+    package: PyPIPackage = c.package_for('textwrap3')  # type: ignore
+    sha256 = await get_path_hash(await package.source())
+    reqs = ChosenPackageRequirements(
+        build_requirements=[],
+        test_requirements=[],
+        runtime_requirements=[],
+    )
+    meta = await package.metadata()
+    expr = build_nix_expression(package, reqs, meta, sha256, ('textwrap3', 'zip'))
+    print(expr)
+    wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
+    print(wrapper_expr)
+    result = await run_nix_build(wrapper_expr)
 
 @pytest.mark.asyncio
 async def test_build_sampleproject_nixpkgs():
