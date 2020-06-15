@@ -191,6 +191,8 @@ async def test_build_sampleproject_nixpkgs():
         wrapper_expr = f"""(({nixpkgs_expr}) {{}}).python3.pkgs.sampleproject"""
         result = await run_nix_build(wrapper_expr)
 
+    assert 'default.nix' not in nixpkgs_expr
+
     proc = await asyncio.create_subprocess_shell(
         f'{result}/bin/sample',
         stdout=asyncio.subprocess.PIPE)

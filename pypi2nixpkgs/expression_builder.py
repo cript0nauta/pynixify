@@ -53,8 +53,12 @@ expression_template = Template("""${DISCLAIMER}
             doCheck = false;
         % endif
 
-        buildInputs = [ ${' '.join(build_requirements)} ];
-        propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
+        % if build_requirements:
+            buildInputs = [ ${' '.join(build_requirements)} ];
+        % endif
+        % if runtime_requirements:
+            propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
+        % endif
         % if test_requirements:
             checkInputs = [ ${' '.join(test_requirements)} ];
         % endif
@@ -94,7 +98,7 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
             % for (package_name, path) in overlays.items():
                 ${package_name} =
                     self.callPackage
-                        ${'' if path.is_absolute() else './'}${path} {};
+                        ${'' if path.is_absolute() else './'}${str(path).replace('/default.nix', '')} {};
 
             % endfor
         };
