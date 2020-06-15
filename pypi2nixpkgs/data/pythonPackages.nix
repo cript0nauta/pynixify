@@ -1,7 +1,7 @@
 with (import <nixpkgs> { });
 
 let
-  allPackages = python37Packages;
+  allPackages = python3Packages;
 
   validPackages =
     lib.filterAttrs (k: v: (builtins.tryEval v).success) allPackages;

@@ -20,6 +20,12 @@ teardown(){
     grep "A sample Python project" pypi2nixpkgs/packages/sampleproject/default.nix
 }
 
+@test "sampleproject in python 3.8" {
+    pypi2nixpkgs sampleproject==1.3.1
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python38.pkgs.sampleproject
+    ./result/bin/sample | grep 'Call your main'
+}
+
 @test "sampleproject-local" {
     git clone https://github.com/pypa/sampleproject
     cd sampleproject

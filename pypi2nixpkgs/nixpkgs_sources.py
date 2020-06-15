@@ -28,7 +28,7 @@ class NixPackage(Package):
             '<nixpkgs>',
             '--no-build-output',
             '-A',
-            f'python37Packages."{self.attr}".src',
+            f'python3Packages."{self.attr}".src',
         ]
         args += extra_args
         return await run_nix_build(*args)

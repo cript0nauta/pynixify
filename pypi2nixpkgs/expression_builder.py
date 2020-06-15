@@ -74,7 +74,9 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
     { overlays ? [ ], ... }@args:
     let
         pypi2nixOverlay = self: super: {
-            python3 = super.python3.override { inherit packageOverrides; };
+            % for interpreter in interpreters:
+                ${interpreter} = super.${interpreter}.override { inherit packageOverrides; };
+            % endfor
         };
 
         nixpkgs =
@@ -137,6 +139,17 @@ def build_overlayed_nixpkgs(
         k: overlays[k]
         for k in sorted(overlays.keys())
     }
+
+    # Taken from Interpreters section in https://nixos.org/nixpkgs/manual/#reference
+    interpreters = [
+        'python2',
+        'python27',
+        'python3',
+        'python35',
+        'python36',
+        'python37',
+        'python38',
+    ]
 
     return overlayed_nixpkgs_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
