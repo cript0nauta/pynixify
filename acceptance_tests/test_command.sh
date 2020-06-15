@@ -17,7 +17,7 @@ teardown(){
     # Temporary files should be removed
     echo ${TMPDIR}/pypi2nixpkgs_*
     [[ -z "$(find "${TMPDIR}" -maxdepth 1 -name 'pypi2nixpkgs_*' -print -quit)" ]]
-    grep "A sample Python project" pypi2nixpkgs/packages/sampleproject.nix
+    grep "A sample Python project" pypi2nixpkgs/packages/sampleproject/default.nix
 }
 
 @test "sampleproject-local" {
@@ -32,7 +32,7 @@ teardown(){
 @test "faraday-agent-dispatcher" {
     pypi2nixpkgs faraday-agent-dispatcher
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.faraday-agent-dispatcher
-    grep 'fetchPypi {' pypi2nixpkgs/packages/faraday-agent-dispatcher.nix
+    grep 'fetchPypi {' pypi2nixpkgs/packages/faraday-agent-dispatcher/default.nix
     ./result/bin/faraday-dispatcher --help
 }
 
@@ -56,7 +56,7 @@ teardown(){
     NIXPKGS_COMMIT=f1f5247103494195d00afd0b0f4ae789dedfd0e4
     pypi2nixpkgs psycopg2==2.7.7 \
         --nixpkgs "https://github.com/nixos/nixpkgs/archive/$NIXPKGS_COMMIT.tar.gz"
-    if [[ -f pypi2nixpkgs/packages/psycopg2.nix ]]; then
+    if [[ -f pypi2nixpkgs/packages/psycopg2/default.nix ]]; then
         echo "Didn't use nixpkgs version of psycopg2"
         exit 1
     fi
@@ -71,7 +71,7 @@ teardown(){
 
 @test "no --load-test-requirements-for" {
     pypi2nixpkgs pytest 'textwrap3==0.9.1'
-    ! grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    ! grep 'pytest' pypi2nixpkgs/packages/textwrap3/default.nix
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
 }
 
@@ -79,7 +79,7 @@ teardown(){
     pypi2nixpkgs --load-test-requirements-for=teXtwrap3 'textwrap3==0.9.1'
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
     nix-store -qR result | { ! grep pytest; }
-    grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    grep 'pytest' pypi2nixpkgs/packages/textwrap3/default.nix
     git clone https://github.com/jonathaneunice/textwrap3
     cd textwrap3
     git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb
@@ -90,7 +90,7 @@ teardown(){
     pypi2nixpkgs --load-all-test-requirements 'textwrap3==0.9.1'
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
     nix-store -qR result | { ! grep pytest; }
-    grep 'pytest' pypi2nixpkgs/packages/textwrap3.nix
+    grep 'pytest' pypi2nixpkgs/packages/textwrap3/default.nix
     git clone https://github.com/jonathaneunice/textwrap3
     cd textwrap3
     git checkout f6cd3e05be255011a5ef1bd442574d104a0050cb

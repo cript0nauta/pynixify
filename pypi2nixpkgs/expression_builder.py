@@ -16,7 +16,7 @@ expression_template = Template("""
         version = ${version | nix};
 
         % if package.local_source:
-            src = lib.cleanSource ../..;
+            src = lib.cleanSource ../../..;
         % elif fetchPypi is not None:
             src = fetchPypi {
                 % if fetchPypi[0] == package.pypi_name:

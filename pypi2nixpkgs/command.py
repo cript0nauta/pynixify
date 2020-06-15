@@ -121,7 +121,9 @@ async def _main_async(
         else:
             expr = build_nix_expression(
                 package, reqs, meta, sha256, fetchPypi=(pname, ext))
-        expression_path = (packages_path / f'{package.pypi_name}.nix')
+        expression_dir = (packages_path / f'{package.pypi_name}/')
+        expression_dir.mkdir(exist_ok=True)
+        expression_path = expression_dir / 'default.nix'
         with expression_path.open('w') as fp:
             fp.write(await nixfmt(expr))
         expression_path = expression_path.relative_to(base_path)
