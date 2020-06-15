@@ -1,3 +1,4 @@
+import sys
 import json
 import asyncio
 from pathlib import Path
@@ -86,9 +87,10 @@ async def run_nix_build(*args: Sequence[str]) -> Path:
         args_ = list(args)
     proc = await asyncio.create_subprocess_exec(
         'nix-build', *args_, stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL)
-    (stdout, _) = await proc.communicate()
+        stderr=asyncio.subprocess.PIPE)
+    (stdout, stderr) = await proc.communicate()
     status = await proc.wait()
     if status:
-        raise NixBuildError(f'nix-buld failed with code {status}')
+        print(stderr.decode(), file=sys.stderr)
+        raise NixBuildError(f'nix-build failed with code {status}')
     return Path(stdout.strip().decode())

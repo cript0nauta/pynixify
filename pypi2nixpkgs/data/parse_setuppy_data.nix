@@ -28,7 +28,10 @@ in stdenv.mkDerivation {
   buildInputs = [ pythonWithPackages ];
   buildPhase = ''
     mkdir -p $out
-    PYPI2NIXKPGS=1 python setup.py install
+    if ! PYPI2NIXKPGS=1 python setup.py install; then
+      # Indicate that fetching the result failed, but let the build succeed
+      touch $out/failed
+    fi
   '';
   dontInstall = true;
 }

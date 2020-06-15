@@ -32,16 +32,15 @@ class PackageRequirements:
 async def eval_path_requirements(path: Path) -> PackageRequirements:
     nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
     assert nix_expression_path.exists()
-    try:
-        nix_store_path = await run_nix_build(
-            str(nix_expression_path),
-            '--no-out-link',
-            '--no-build-output',
-            '--arg',
-            'file',
-            str(path.resolve())
-        )
-    except NixBuildError:
+    nix_store_path = await run_nix_build(
+        str(nix_expression_path),
+        '--no-out-link',
+        '--no-build-output',
+        '--arg',
+        'file',
+        str(path.resolve())
+    )
+    if (nix_store_path / 'failed').exists():
         print(f'Error parsing requirements of {path}. Assuming it has no dependencies.')
         return PackageRequirements(
             build_requirements=[],

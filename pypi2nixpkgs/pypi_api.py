@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import asyncio
 import hashlib
@@ -144,9 +145,11 @@ async def get_path_hash(path: Path) -> str:
     proc = await asyncio.create_subprocess_exec(
         'nix-prefetch-url', url,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
     )
-    (stdout, _) = await proc.communicate()
+    (stdout, stderr) = await proc.communicate()
     status = await proc.wait()
-    assert status == 0
+    if status:
+        print(stderr.decode(), file=sys.stderr)
+        raise RuntimeError(f'nix-prefetch-url failed with code {status}')
     return stdout.decode().strip()

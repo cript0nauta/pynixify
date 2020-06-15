@@ -26,16 +26,15 @@ class Package:
         source = await self.source()
         nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
         assert nix_expression_path.exists()
-        try:
-            nix_store_path = await run_nix_build(
-                str(nix_expression_path),
-                '--no-out-link',
-                '--no-build-output',
-                '--arg',
-                'file',
-                str(source.resolve())
-            )
-        except NixBuildError:
+        nix_store_path = await run_nix_build(
+            str(nix_expression_path),
+            '--no-out-link',
+            '--no-build-output',
+            '--arg',
+            'file',
+            str(source.resolve())
+        )
+        if (nix_store_path / 'failed').exists():
             print(f'Error parsing metadata of {source}. Assuming it has no metadata.')
             return PackageMetadata(
                 url=None,
