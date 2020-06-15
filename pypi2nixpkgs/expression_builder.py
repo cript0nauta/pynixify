@@ -9,7 +9,14 @@ from pypi2nixpkgs.version_chooser import (
 from pypi2nixpkgs.base import PackageMetadata
 from pypi2nixpkgs.pypi_api import PyPIPackage
 
-expression_template = Template("""
+DISCLAIMER = """
+# WARNING: This file was automatically generated. You should avoid editing it.
+# If you run pypi2nixpkgs again, the file will be either overwritten or
+# deleted, and you will lose the changes you made to it.
+
+"""
+
+expression_template = Template("""${DISCLAIMER}
     { ${', '.join(args)} }:
     buildPythonPackage rec {
         pname = ${package.pypi_name | nix};
@@ -63,7 +70,7 @@ expression_template = Template("""
     }
 """)
 
-overlayed_nixpkgs_template = Template("""
+overlayed_nixpkgs_template = Template("""${DISCLAIMER}
     { overlays ? [ ], ... }@args:
     let
         pypi2nixOverlay = self: super: {
@@ -115,7 +122,7 @@ def build_nix_expression(
 
     version = str(package.version)
     nix = escape_string
-    return expression_template.render(**locals())
+    return expression_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
 
 def build_overlayed_nixpkgs(
@@ -131,7 +138,7 @@ def build_overlayed_nixpkgs(
         for k in sorted(overlays.keys())
     }
 
-    return overlayed_nixpkgs_template.render(**locals())
+    return overlayed_nixpkgs_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
 
 async def nixfmt(expr: str) -> str:
