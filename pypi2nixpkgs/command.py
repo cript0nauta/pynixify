@@ -1,10 +1,44 @@
+"""
+Nix expression generator for Python packages. See pypi2nixpkgs(1) manpage
+for extended documentation.
+
+Usage:
+    pypi2nixpkgs [options] [<requirement> [<requirement>...]]
+    pypi2nixpkgs [options] --tests <packages> [<requirement> [<requirement>...]]
+    pypi2nixpkgs [options] --all-tests [--ignore-tests <packages>] [<requirement> [<requirement>...]]
+
+Options:
+    -l <name>, --local <name>  Create a "python.pkgs.<name>" derivation
+                               using the current directory as source. Useful
+                               for packaging projects with a setup.py.
+
+    --nixpkgs URL              URL to a tarball containing the nixpkgs source.
+                               When specified, the generated expressions will
+                               use it instead of <nixpkgs>, improving
+                               reproducibility
+
+    -o <dir>, --output <dir>   Directory in which the tool will save the generated
+                               Nix expressions. If it doesn't exist, it will be
+                               automatically created. [default: pypi2nixpkgs/]
+
+    --all-tests                Include test requirements in all generated expressions,
+                               except for those explicitly excluded with --ignore-tests
+
+    --ignore-tests <packages>  Comma-separated list of packages for which we don't
+                               want their test requirements to be loaded
+
+    --tests <packages>         Comma-separated list of packages for which we do want
+                               their test requirements to be loaded.
+
+    --help                     This help text.
+"""
 import re
 import os
-import click
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Dict, Optional, Tuple
+from docopt import docopt
 import pypi2nixpkgs.nixpkgs_sources
 from pypi2nixpkgs.nixpkgs_sources import (
     NixpkgsData,
@@ -56,16 +90,30 @@ async def _build_version_chooser(
     return version_chooser
 
 
-@click.command()
-@click.argument('requirements', nargs=-1)
-@click.option('--local', nargs=1)
-@click.option('--nixpkgs', nargs=1)
-@click.option('--output-dir', nargs=1)
-@click.option('--load-test-requirements-for', multiple=True)
-@click.option('--ignore-test-requirements-for', multiple=True)
-@click.option('--load-all-test-requirements', is_flag=True)
-def main(**kwargs):
-    asyncio.run(_main_async(**kwargs))
+def main():
+    args = docopt(__doc__)
+    args = {k: v for (k, v) in args.items()
+            if v or isinstance(v, list)}
+
+    try:
+        args['--tests'] = args['--tests'].split(',')
+    except KeyError:
+        args['--tests'] = []
+
+    try:
+        args['--ignore-tests'] = args['--ignore-tests'].split(',')
+    except KeyError:
+        args['--ignore-tests'] = []
+
+    asyncio.run(_main_async(
+        requirements=args['<requirement>'],
+        local=args.get('--local'),
+        output_dir=args.get('--output'),
+        nixpkgs=args.get('--nixpkgs'),
+        load_all_test_requirements='--all-tests' in args,
+        load_test_requirements_for=args['--tests'],
+        ignore_test_requirements_for=args['--ignore-tests'],
+    ))
 
 async def _main_async(
         requirements,

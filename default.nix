@@ -7,7 +7,7 @@ python3.pkgs.buildPythonPackage {
   doCheck = true;
 
   propagatedBuildInputs =
-    with python3.pkgs; [ packaging setuptools aiohttp aiofiles click Mako ];
+    with python3.pkgs; [ packaging setuptools aiohttp aiofiles docopt Mako ];
 
   checkInputs = with python3.pkgs; [ pytest pytest-asyncio mypy bats nix nixfmt ];
 

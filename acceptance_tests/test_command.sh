@@ -76,7 +76,7 @@ teardown(){
 }
 
 @test "--output-dir" {
-    pypi2nixpkgs sampleproject==1.3.1 --output-dir my-pypi2nixpkgs-dir
+    pypi2nixpkgs sampleproject==1.3.1 -o my-pypi2nixpkgs-dir
     nix-build my-pypi2nixpkgs-dir/nixpkgs.nix -A python3.pkgs.sampleproject
     ./result/bin/sample | grep 'Call your main'
 }
@@ -88,7 +88,7 @@ teardown(){
 }
 
 @test "--load-test-requirements-for" {
-    pypi2nixpkgs --load-test-requirements-for=teXtwrap3 'textwrap3==0.9.1'
+    pypi2nixpkgs --tests=teXtwrap3 'textwrap3==0.9.1'
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
     nix-store -qR result | { ! grep pytest; }
     grep 'pytest' pypi2nixpkgs/packages/textwrap3/default.nix
@@ -99,7 +99,7 @@ teardown(){
 }
 
 @test "--load-all-test-requirements" {
-    pypi2nixpkgs --load-all-test-requirements 'textwrap3==0.9.1'
+    pypi2nixpkgs --all-tests 'textwrap3==0.9.1'
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.textwrap3
     nix-store -qR result | { ! grep pytest; }
     grep 'pytest' pypi2nixpkgs/packages/textwrap3/default.nix
@@ -113,7 +113,7 @@ teardown(){
     # filedepot depends on boto3, which depends on botocore, which isn't
     # compatible with the nixpkgs version of docutils (actually, it is, but it
     # requires patching the source)
-    pypi2nixpkgs --load-all-test-requirements --ignore-test-requirements-for=filedepot \
+    pypi2nixpkgs --all-tests --ignore-tests=filedepot \
         docutils filedepot
     nix-build pypi2nixpkgs/nixpkgs.nix -A python3.pkgs.filedepot
 }
