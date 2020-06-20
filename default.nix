@@ -1,23 +1,17 @@
-with (import <nixpkgs> { });
+with (import ./nix/nixpkgs.nix { });
 
-python3.pkgs.buildPythonPackage {
-  pname = "pynixify";
-  version = "0.1dev";
-  src = lib.cleanSource ./.;
-  doCheck = true;
+python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
+  (drv: {
+    # Add system dependencies
+    checkInputs = drv.checkInputs ++ [ nix nixfmt bats ];
 
-  propagatedBuildInputs =
-    with python3.pkgs; [ packaging setuptools aiohttp aiofiles docopt Mako ];
+    checkPhase = ''
+      mypy pynixify/ tests/ acceptance_tests/
+      pytest tests/ -m 'not usesnix'
+    '';
 
-  checkInputs = with python3.pkgs; [ pytest pytest-asyncio mypy bats nix nixfmt ];
-
-  checkPhase = ''
-    mypy pynixify/ tests/ acceptance_tests/
-    pytest tests/ -m 'not usesnix'
-  '';
-
-  postInstall = ''
-    # Add nixfmt to pynixify's PATH
-    wrapProgram $out/bin/pynixify --prefix PATH : "${nixfmt}/bin"
-  '';
-}
+    postInstall = ''
+      # Add nixfmt to pynixify's PATH
+      wrapProgram $out/bin/pynixify --prefix PATH : "${nixfmt}/bin"
+    '';
+  }))
