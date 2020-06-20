@@ -1,11 +1,11 @@
 """
-Nix expression generator for Python packages. See pypi2nixpkgs(1) manpage
+Nix expression generator for Python packages. See pynixify(1) manpage
 for extended documentation.
 
 Usage:
-    pypi2nixpkgs [options] [<requirement> [<requirement>...]]
-    pypi2nixpkgs [options] --tests <packages> [<requirement> [<requirement>...]]
-    pypi2nixpkgs [options] --all-tests [--ignore-tests <packages>] [<requirement> [<requirement>...]]
+    pynixify [options] [<requirement> [<requirement>...]]
+    pynixify [options] --tests <packages> [<requirement> [<requirement>...]]
+    pynixify [options] --all-tests [--ignore-tests <packages>] [<requirement> [<requirement>...]]
 
 Options:
     -l <name>, --local <name>  Create a "python.pkgs.<name>" derivation
@@ -19,7 +19,7 @@ Options:
 
     -o <dir>, --output <dir>   Directory in which the tool will save the generated
                                Nix expressions. If it doesn't exist, it will be
-                               automatically created. [default: pypi2nixpkgs/]
+                               automatically created. [default: pynixify/]
 
     --all-tests                Include test requirements in all generated expressions,
                                except for those explicitly excluded with --ignore-tests
@@ -39,26 +39,26 @@ from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Dict, Optional, Tuple
 from docopt import docopt
-import pypi2nixpkgs.nixpkgs_sources
-from pypi2nixpkgs.nixpkgs_sources import (
+import pynixify.nixpkgs_sources
+from pynixify.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPICache,
     PyPIData,
 )
-from pypi2nixpkgs.version_chooser import (
+from pynixify.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
     evaluate_package_requirements,
 )
-from pypi2nixpkgs.expression_builder import (
+from pynixify.expression_builder import (
     build_nix_expression,
     build_overlayed_nixpkgs,
     nixfmt,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPIPackage,
     get_path_hash,
 )
@@ -125,7 +125,7 @@ async def _main_async(
         load_all_test_requirements: bool):
 
     if nixpkgs is not None:
-        pypi2nixpkgs.nixpkgs_sources.NIXPKGS_URL = nixpkgs
+        pynixify.nixpkgs_sources.NIXPKGS_URL = nixpkgs
 
     version_chooser: VersionChooser = await _build_version_chooser(
         load_test_requirements_for, ignore_test_requirements_for,
@@ -139,7 +139,7 @@ async def _main_async(
         for req in requirements
     ))
 
-    output_dir = output_dir or 'pypi2nixpkgs'
+    output_dir = output_dir or 'pynixify'
     base_path = Path.cwd() / output_dir
     packages_path = base_path / 'packages'
     packages_path.mkdir(parents=True, exist_ok=True)

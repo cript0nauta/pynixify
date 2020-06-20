@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from typing import Sequence
 from packaging.requirements import Requirement
-from pypi2nixpkgs.package_requirements import PackageRequirements
+from pynixify.package_requirements import PackageRequirements
 
 @pytest.mark.asyncio
 async def test_package_requirements():

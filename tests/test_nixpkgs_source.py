@@ -1,8 +1,8 @@
 import pytest
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
-from pypi2nixpkgs.exceptions import PackageNotFound
-from pypi2nixpkgs.nixpkgs_sources import (
+from pynixify.exceptions import PackageNotFound
+from pynixify.nixpkgs_sources import (
     NixpkgsData,
     NixPackage,
 )

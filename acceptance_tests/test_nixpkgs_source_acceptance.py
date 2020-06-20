@@ -4,27 +4,27 @@ import tempfile
 from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.version import parse
-from pypi2nixpkgs.nixpkgs_sources import (
+from pynixify.nixpkgs_sources import (
     load_nixpkgs_data,
     NixpkgsData,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPICache,
     PyPIData,
 )
-from pypi2nixpkgs.package_requirements import (
+from pynixify.package_requirements import (
     eval_path_requirements,
 )
-from pypi2nixpkgs.version_chooser import (
+from pynixify.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
     evaluate_package_requirements,
 )
-from pypi2nixpkgs.expression_builder import (
+from pynixify.expression_builder import (
     build_nix_expression,
     build_overlayed_nixpkgs,
 )
-from pypi2nixpkgs.pypi_api import PyPIPackage, get_path_hash
+from pynixify.pypi_api import PyPIPackage, get_path_hash
 from tests.test_version_chooser import assert_version, dummy_pypi
 
 PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']

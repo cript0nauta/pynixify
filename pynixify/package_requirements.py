@@ -3,8 +3,8 @@ from typing import List
 from dataclasses import dataclass
 from packaging.requirements import Requirement
 from pkg_resources import parse_requirements
-from pypi2nixpkgs.nixpkgs_sources import run_nix_build
-from pypi2nixpkgs.exceptions import NixBuildError
+from pynixify.nixpkgs_sources import run_nix_build
+from pynixify.exceptions import NixBuildError
 
 
 @dataclass

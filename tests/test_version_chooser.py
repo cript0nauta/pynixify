@@ -1,22 +1,22 @@
 import json
 import pytest
 from pathlib import Path
-from pypi2nixpkgs.base import Package
+from pynixify.base import Package
 from packaging.requirements import Requirement
-from pypi2nixpkgs.package_requirements import PackageRequirements
-from pypi2nixpkgs.nixpkgs_sources import (
+from pynixify.package_requirements import PackageRequirements
+from pynixify.nixpkgs_sources import (
     NixpkgsData,
     NixPackage,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPIData,
     PyPIPackage,
 )
-from pypi2nixpkgs.version_chooser import (
+from pynixify.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
 )
-from pypi2nixpkgs.exceptions import (
+from pynixify.exceptions import (
     NoMatchingVersionFound,
     PackageNotFound,
 )

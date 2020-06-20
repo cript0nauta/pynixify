@@ -2,7 +2,7 @@ import os
 import shutil
 import pytest
 from packaging.requirements import Requirement
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPIData,
     PyPICache,
 )

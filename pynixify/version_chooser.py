@@ -6,14 +6,14 @@ from typing import Any, Dict, Callable, Awaitable, Optional, List, Tuple
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
-from pypi2nixpkgs.base import Package
-from pypi2nixpkgs.nixpkgs_sources import NixpkgsData, NixPackage
-from pypi2nixpkgs.pypi_api import PyPIData, PyPIPackage
-from pypi2nixpkgs.package_requirements import (
+from pynixify.base import Package
+from pynixify.nixpkgs_sources import NixpkgsData, NixPackage
+from pynixify.pypi_api import PyPIData, PyPIPackage
+from pynixify.package_requirements import (
     PackageRequirements,
     eval_path_requirements,
 )
-from pypi2nixpkgs.exceptions import (
+from pynixify.exceptions import (
     NoMatchingVersionFound,
     PackageNotFound,
 )

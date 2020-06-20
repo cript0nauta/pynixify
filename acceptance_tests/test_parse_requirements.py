@@ -4,12 +4,12 @@ import pytest
 import tempfile
 from pathlib import Path
 from packaging.requirements import Requirement
-from pypi2nixpkgs.base import PackageMetadata
-from pypi2nixpkgs.pypi_api import (
+from pynixify.base import PackageMetadata
+from pynixify.pypi_api import (
     PyPIData,
     PyPICache,
 )
-from pypi2nixpkgs.package_requirements import (
+from pynixify.package_requirements import (
     eval_path_requirements
 )
 

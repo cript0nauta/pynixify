@@ -4,11 +4,11 @@ from pathlib import Path
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
-from pypi2nixpkgs.exceptions import (
+from pynixify.exceptions import (
     PackageNotFound,
     IntegrityError,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     ABCPyPICache,
     PyPICache,
     PyPIData,

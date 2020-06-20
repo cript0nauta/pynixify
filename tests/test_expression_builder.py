@@ -3,16 +3,16 @@ import asyncio
 import pytest
 from typing import List
 from packaging.requirements import Requirement
-from pypi2nixpkgs.base import PackageMetadata
-from pypi2nixpkgs.version_chooser import VersionChooser
-from pypi2nixpkgs.nixpkgs_sources import (
+from pynixify.base import PackageMetadata
+from pynixify.version_chooser import VersionChooser
+from pynixify.nixpkgs_sources import (
     NixpkgsData,
 )
-from pypi2nixpkgs.pypi_api import (
+from pynixify.pypi_api import (
     PyPIData,
     nix_instantiate,
 )
-from pypi2nixpkgs.expression_builder import (
+from pynixify.expression_builder import (
     build_nix_expression,
     escape_string,
     nixfmt

@@ -7,8 +7,8 @@ from collections import defaultdict
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
-from pypi2nixpkgs.base import Package
-from pypi2nixpkgs.exceptions import PackageNotFound, NixBuildError
+from pynixify.base import Package
+from pynixify.exceptions import PackageNotFound, NixBuildError
 
 NIXPKGS_URL: Optional[str] = None
 

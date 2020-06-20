@@ -16,7 +16,7 @@ let
     lib.cleanSourceWith {
       filter = name: type:
         lib.cleanSourceFilter name type && builtins.baseNameOf (toString name)
-        != "pypi2nixpkgs";
+        != "pynixify";
       name = builtins.baseNameOf src;
       inherit src;
     };

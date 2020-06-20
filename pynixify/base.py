@@ -22,7 +22,7 @@ class Package:
         raise NotImplementedError()
 
     async def metadata(self) -> PackageMetadata:
-        from pypi2nixpkgs.package_requirements import run_nix_build, NixBuildError
+        from pynixify.package_requirements import run_nix_build, NixBuildError
         source = await self.source()
         nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
         assert nix_expression_path.exists()

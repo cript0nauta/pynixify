@@ -2,16 +2,16 @@ import asyncio
 from pathlib import Path
 from typing import Iterable, Mapping, List, Set, Optional, Tuple
 from mako.template import Template
-from pypi2nixpkgs.version_chooser import (
+from pynixify.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
 )
-from pypi2nixpkgs.base import PackageMetadata
-from pypi2nixpkgs.pypi_api import PyPIPackage
+from pynixify.base import PackageMetadata
+from pynixify.pypi_api import PyPIPackage
 
 DISCLAIMER = """
 # WARNING: This file was automatically generated. You should avoid editing it.
-# If you run pypi2nixpkgs again, the file will be either overwritten or
+# If you run pynixify again, the file will be either overwritten or
 # deleted, and you will lose the changes you made to it.
 
 """
@@ -137,8 +137,8 @@ def build_overlayed_nixpkgs(
         ) -> str:
     nix = escape_string
 
-    # Sort dictionary keys to ensure pypi2nixpkgs/nixpkgs.nix will have the
-    # same contents in different pypi2nixpkgs runs.
+    # Sort dictionary keys to ensure pynixify/nixpkgs.nix will have the
+    # same contents in different pynixify runs.
     overlays = {
         k: overlays[k]
         for k in sorted(overlays.keys())

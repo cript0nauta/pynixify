@@ -14,8 +14,8 @@ from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
-from pypi2nixpkgs.base import Package
-from pypi2nixpkgs.exceptions import (
+from pynixify.base import Package
+from pynixify.exceptions import (
     IntegrityError
 )
 
@@ -101,7 +101,7 @@ class PyPICache:
                 return await response.json()
 
     async def fetch_url(self, url, sha256) -> Path:
-        from pypi2nixpkgs.expression_builder import escape_string
+        from pynixify.expression_builder import escape_string
         expr = f"""
             builtins.fetchurl {{
                 url = {escape_string(url)};
