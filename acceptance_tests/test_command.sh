@@ -26,6 +26,12 @@ teardown(){
     ./result/bin/sample | grep 'Call your main'
 }
 
+@test "sampleproject in python 2.7" {
+    pypi2nixpkgs sampleproject==1.3.1
+    nix-build pypi2nixpkgs/nixpkgs.nix -A python27.pkgs.sampleproject
+    ./result/bin/sample | grep 'Call your main'
+}
+
 @test "sampleproject-local" {
     git clone https://github.com/pypa/sampleproject
     cd sampleproject
