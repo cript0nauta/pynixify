@@ -7,6 +7,7 @@ setup(
     package_data={'pynixify': ['data/*']},
     license='GPLv3+',
     description="Nix expression generator for Python packages",
+    url="https://github.com/cript0nauta/pynixify",
     # long_description=open('README.txt').read(),
     tests_require=['pytest', 'pytest-asyncio', 'mypy'],
     install_requires=['packaging', 'setuptools', 'aiohttp<4.0.0', 'aiofiles', 'docopt', 'Mako'],

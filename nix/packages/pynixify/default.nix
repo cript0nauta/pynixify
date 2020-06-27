@@ -16,5 +16,8 @@ buildPythonPackage rec {
   propagatedBuildInputs = [ packaging setuptools aiohttp aiofiles docopt Mako ];
   checkInputs = [ pytest pytest-asyncio mypy ];
 
-  meta = { description = "Nix expression generator for Python packages"; };
+  meta = {
+    description = "Nix expression generator for Python packages";
+    homepage = "https://github.com/cript0nauta/pynixify";
+  };
 }
