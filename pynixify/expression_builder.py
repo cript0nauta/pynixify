@@ -34,6 +34,7 @@ DISCLAIMER = """
 
 expression_template = Template("""${DISCLAIMER}
     { ${', '.join(args)} }:
+
     buildPythonPackage rec {
         pname = ${package.pypi_name | nix};
         version = ${version | nix};
@@ -62,7 +63,6 @@ expression_template = Template("""${DISCLAIMER}
         % endif
 
         % if test_requirements:
-            doCheck = true;
             checkPhase = "true  # TODO fill with the real command for testing";
         % else:
             # TODO FIXME
@@ -79,7 +79,7 @@ expression_template = Template("""${DISCLAIMER}
             checkInputs = [ ${' '.join(test_requirements)} ];
         % endif
 
-        meta = {
+        meta = with lib; {
             % if metadata.description:
                 description = ${metadata.description | nix };
             % endif
