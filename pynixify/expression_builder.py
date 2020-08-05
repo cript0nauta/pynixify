@@ -62,13 +62,6 @@ expression_template = Template("""${DISCLAIMER}
             };
         % endif
 
-        % if test_requirements:
-            checkPhase = "true  # TODO fill with the real command for testing";
-        % else:
-            # TODO FIXME
-            doCheck = false;
-        % endif
-
         % if build_requirements:
             buildInputs = [ ${' '.join(build_requirements)} ];
         % endif
@@ -77,6 +70,13 @@ expression_template = Template("""${DISCLAIMER}
         % endif
         % if test_requirements:
             checkInputs = [ ${' '.join(test_requirements)} ];
+        % endif
+
+        % if test_requirements:
+            checkPhase = "true  # TODO fill with the real command for testing";
+        % else:
+            # TODO FIXME
+            doCheck = false;
         % endif
 
         meta = with lib; {
