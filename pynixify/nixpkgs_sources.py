@@ -95,7 +95,7 @@ async def load_nixpkgs_data(extra_args):
     return ret
 
 
-async def run_nix_build(*args: Sequence[str]) -> Path:
+async def run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
     if NIXPKGS_URL is not None:
         # TODO fix mypy hack
         args_ = list(args) + ['-I', f'nixpkgs={NIXPKGS_URL}']
@@ -106,6 +106,23 @@ async def run_nix_build(*args: Sequence[str]) -> Path:
         stderr=asyncio.subprocess.PIPE)
     (stdout, stderr) = await proc.communicate()
     status = await proc.wait()
+
+    if b'all build users are currently in use' in stderr and retries < max_retries:
+        # perform an expotential backoff and retry
+        # TODO think a way to avoid relying in the error message
+        sys.stderr.write(
+            f'warning: All build users are currently in use. '
+            f'Retrying in {2**retries} seconds\n'
+        )
+        await asyncio.sleep(2**retries)
+        return await run_nix_build(
+            *args,
+            retries=retries+1,
+            max_retries=max_retries
+        )
+    elif retries >= max_retries:
+        sys.stderr.write(f'error: Giving up after {max_retries} failed retries\n')
+
     if status:
         print(stderr.decode(), file=sys.stderr)
         raise NixBuildError(f'nix-build failed with code {status}')
