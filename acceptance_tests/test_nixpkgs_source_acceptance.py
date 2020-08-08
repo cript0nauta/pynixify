@@ -43,18 +43,17 @@ from pynixify.expression_builder import (
 from pynixify.pypi_api import PyPIPackage, get_path_hash
 from tests.test_version_chooser import assert_version, dummy_pypi
 
-PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/845b911ac2150066538e1063ec3c409dbf8647bc.tar.gz']
+PINNED_NIXPKGS_ARGS = ['-I', 'nixpkgs=https://github.com/NixOS/nixpkgs/archive/4364ff933ebec0ef856912b182f4f9272aa7f98f.tar.gz']
 
 
 @pytest.mark.asyncio
 async def test_all():
     data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
     repo = NixpkgsData(data)
-    (django, ) = repo.from_requirement(Requirement('django>=2.2'))
-    assert django.version == parse('2.2.9')
-    assert django.attr == 'django_2_2'
+    django = repo.from_requirement(Requirement('django>=2.0'))[0]
+    assert django.version == parse('2.2.14')
     nix_store_path = await django.source(PINNED_NIXPKGS_ARGS)
-    assert nix_store_path == Path('/nix/store/560jpg1ilahfs1j0xw4s0z6fld2a8fq5-Django-2.2.9.tar.gz')
+    assert nix_store_path == Path('/nix/store/1b47170f04xir2vfwxjl2a59mjsrskaq-Django-2.2.14.tar.gz')
     reqs = await eval_path_requirements(nix_store_path)
     assert not reqs.build_requirements
     assert not reqs.test_requirements
@@ -64,9 +63,9 @@ async def test_all():
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(repo, dummy_pypi, f)
     await c.require(Requirement('flask'))
-    assert_version(c, 'flask', '1.0.4')
+    assert_version(c, 'flask', '1.1.1')
     assert_version(c, 'itsdangerous', '1.1.0')
-    assert_version(c, 'Werkzeug', '0.15.5')
+    assert_version(c, 'Werkzeug', '0.16.1')
 
 
 @pytest.mark.asyncio
@@ -163,7 +162,7 @@ async def test_build_textwrap3_expression():
     async def f(pkg):
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(nixpkgs, pypi, f)
-    await c.require(Requirement('textwrap3==0.9.2'))
+    await c.require(Requirement('textwrap3==0.9.1'))
     package: PyPIPackage = c.package_for('textwrap3')  # type: ignore
     sha256 = await get_path_hash(await package.source())
     reqs = ChosenPackageRequirements(
