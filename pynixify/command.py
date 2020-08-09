@@ -240,6 +240,10 @@ async def _main_async(
         p: Optional[Package] = version_chooser.package_for(req.name)
         assert p is not None
         packages.append(p)
+    if local is not None:
+        p = version_chooser.package_for(local)
+        assert p is not None
+        packages.append(p)
 
     with (base_path / 'shell.nix').open('w') as fp:
         expr = build_shell_nix_expression(packages)

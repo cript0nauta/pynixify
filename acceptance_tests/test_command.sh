@@ -39,6 +39,7 @@ teardown(){
     pynixify --local sampleproject
     nix-build pynixify/nixpkgs.nix -A python3.pkgs.sampleproject
     ./result/bin/sample | grep 'Call my main'
+    nix-shell pynixify/shell.nix --command sample | grep 'Call my main'
 }
 
 @test "faraday-agent-dispatcher" {
