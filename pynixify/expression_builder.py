@@ -123,11 +123,15 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
 """)
 
 shell_nix_template = Template("""${DISCLAIMER}
-    with (import ./nixpkgs.nix {});
-    mkShell {
+    { python ? "python3" }:
+    let
+        pkgs = import ./nixpkgs.nix {};
+        pythonPkg = builtins.getAttr python pkgs;
+    in
+    pkgs.mkShell {
         name = "pynixify-env";
         buildInputs = [
-            (python3.withPackages (ps: with ps; [
+            (pythonPkg.withPackages (ps: with ps; [
                 % for package in packages:
                     ${package.attr}
                 % endfor
