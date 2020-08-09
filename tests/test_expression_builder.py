@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import json
 import asyncio
+import tempfile
 import pytest
 from typing import List
+from pathlib import Path
 from packaging.requirements import Requirement
 from pynixify.base import PackageMetadata
 from pynixify.version_chooser import VersionChooser
@@ -30,6 +33,7 @@ from pynixify.pypi_api import (
 )
 from pynixify.expression_builder import (
     build_nix_expression,
+    build_shell_nix_expression,
     escape_string,
     nixfmt
 )
@@ -60,7 +64,7 @@ NO_METADATA = PackageMetadata(
 )
 
 
-async def is_valid_nix(expr: str, attr=None, **kwargs) -> bool:
+async def is_valid_nix(expr: str, attr=None, cwd=None, **kwargs) -> bool:
     extra_args: List[str] = []
     if attr is not None:
         extra_args += ['--attr', attr]
@@ -71,6 +75,7 @@ async def is_valid_nix(expr: str, attr=None, **kwargs) -> bool:
         'nix-instantiate', '--eval', '-', *extra_args,
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.DEVNULL,
+        cwd=cwd,
     )
     proc.stdin.write(expr.encode())  # type: ignore
     proc.stdin.write_eof()  # type: ignore
@@ -127,6 +132,20 @@ async def test_call(version_chooser):
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"
 
+@pytest.mark.usesnix
+@pytest.mark.asyncio
+async def test_shell_nix(version_chooser):
+    await version_chooser.require(Requirement("sampleproject"))
+    result = build_shell_nix_expression([
+        version_chooser.package_for('sampleproject')
+    ])
+
+    with tempfile.TemporaryDirectory() as dirname:
+        with (Path(dirname) / 'nixpkgs.nix').open('w') as fp:
+            fp.write('args: import <nixpkgs> args')
+        assert await is_valid_nix(
+            result, cwd=dirname, **DEFAULT_ARGS), "Invalid Nix expression"
+        assert 'sampleproject' in result
 
 @pytest.mark.usesnix
 @pytest.mark.asyncio

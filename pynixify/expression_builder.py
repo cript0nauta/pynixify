@@ -22,7 +22,7 @@ from pynixify.version_chooser import (
     VersionChooser,
     ChosenPackageRequirements,
 )
-from pynixify.base import PackageMetadata
+from pynixify.base import PackageMetadata, Package
 from pynixify.pypi_api import PyPIPackage
 
 DISCLAIMER = """
@@ -122,6 +122,20 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
     in import nixpkgs (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
 """)
 
+shell_nix_template = Template("""${DISCLAIMER}
+    with (import ./nixpkgs.nix {});
+    mkShell {
+        name = "pynixify-env";
+        buildInputs = [
+            (python3.withPackages (ps: with ps; [
+                % for package in packages:
+                    ${package.attr}
+                % endfor
+            ]))
+        ];
+    }
+""")
+
 def build_nix_expression(
         package: PyPIPackage,
         requirements: ChosenPackageRequirements,
@@ -172,6 +186,10 @@ def build_overlayed_nixpkgs(
     ]
 
     return overlayed_nixpkgs_template.render(DISCLAIMER=DISCLAIMER, **locals())
+
+
+def build_shell_nix_expression(packages: List[Package]) -> str:
+    return shell_nix_template.render(DISCLAIMER=DISCLAIMER, packages=packages)
 
 
 async def nixfmt(expr: str) -> str:

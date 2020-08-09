@@ -56,6 +56,7 @@ from urllib.parse import urlparse
 from typing import List, Dict, Optional, Tuple
 from docopt import docopt
 import pynixify.nixpkgs_sources
+from pynixify.base import Package
 from pynixify.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
@@ -72,6 +73,7 @@ from pynixify.version_chooser import (
 from pynixify.expression_builder import (
     build_nix_expression,
     build_overlayed_nixpkgs,
+    build_shell_nix_expression,
     nixfmt,
 )
 from pynixify.pypi_api import (
@@ -204,6 +206,16 @@ async def _main_async(
         else:
             sha256 = await get_url_hash(nixpkgs)
             expr = build_overlayed_nixpkgs(overlays, (nixpkgs, sha256))
+        fp.write(await nixfmt(expr))
+
+    packages: List[Package] = []
+    for req in requirements:
+        p: Optional[Package] = version_chooser.package_for(Requirement(req).name)
+        assert p is not None
+        packages.append(p)
+
+    with (base_path / 'shell.nix').open('w') as fp:
+        expr = build_shell_nix_expression(packages)
         fp.write(await nixfmt(expr))
 
 

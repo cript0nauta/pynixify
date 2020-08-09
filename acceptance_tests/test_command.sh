@@ -117,3 +117,9 @@ teardown(){
         docutils filedepot
     nix-build pynixify/nixpkgs.nix -A python3.pkgs.filedepot
 }
+
+@test "shell.nix" {
+    pynixify sampleproject
+    cat pynixify/shell.nix
+    nix-shell pynixify/shell.nix --command 'sample' | grep 'Call your main'
+}
