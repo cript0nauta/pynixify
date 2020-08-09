@@ -131,3 +131,15 @@ teardown(){
         --command 'python --version' |
         grep 'Python 3.8'
 }
+
+
+@test "-r and shell.nix" {
+    echo sampleproject==1.3.1 > requirements.txt
+    echo flask >> requirements2.txt
+    echo '# This is a comment' >> requirements2.txt
+    echo ipython >> requirements2.txt
+    pynixify -r requirements.txt -r requirements2.txt
+    cat pynixify/shell.nix
+    nix-shell pynixify/shell.nix \
+        --command 'set -e; sample; flask --version; ipython --version'
+}

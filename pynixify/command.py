@@ -21,6 +21,7 @@ import argparse
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Dict, Optional, Tuple
+from pkg_resources import parse_requirements
 import pynixify.nixpkgs_sources
 from pynixify.base import Package
 from pynixify.nixpkgs_sources import (
@@ -126,10 +127,21 @@ def main():
             "Comma-separated list of packages for which we do want "
             "their test requirements to be loaded."
         ))
+    parser.add_argument(
+        '-r',
+        metavar='REQUIREMENTS_FILE',
+        action='append',
+        help=(
+            "A filename whose content is a PEP 508 compliant list of "
+            "dependencies. It can be specified multiple times to use more "
+            "than one file. Note that pip-specific options, such as "
+            "'-e git+https....' are not supported."
+        ))
     args = parser.parse_args()
 
     asyncio.run(_main_async(
         requirements=args.requirement,
+        requirement_files=args.r or [],
         local=args.local,
         output_dir=args.output,
         nixpkgs=args.nixpkgs,
@@ -139,7 +151,8 @@ def main():
     ))
 
 async def _main_async(
-        requirements,
+        requirements: List[str],
+        requirement_files: List[str],
         local: Optional[str],
         nixpkgs: Optional[str],
         output_dir: Optional[str],
@@ -157,9 +170,18 @@ async def _main_async(
     if local is not None:
         await version_chooser.require_local(local, Path.cwd())
 
+    all_requirements: List[Requirement] = []
+    for requirement_file in requirement_files:
+        with open(requirement_file) as fp:
+            for r in parse_requirements(fp.read()):
+                # Convert from Requirement.parse to Requirement
+                all_requirements.append(Requirement(str(r)))
+    for req_ in requirements:
+        all_requirements.append(Requirement(req_))
+
     await asyncio.gather(*(
-        version_chooser.require(Requirement(req))
-        for req in requirements
+        version_chooser.require(req)
+        for req in all_requirements
     ))
 
     output_dir = output_dir or 'pynixify'
@@ -214,8 +236,8 @@ async def _main_async(
         fp.write(await nixfmt(expr))
 
     packages: List[Package] = []
-    for req in requirements:
-        p: Optional[Package] = version_chooser.package_for(Requirement(req).name)
+    for req in all_requirements:
+        p: Optional[Package] = version_chooser.package_for(req.name)
         assert p is not None
         packages.append(p)
 
