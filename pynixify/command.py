@@ -14,47 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Nix expression generator for Python packages. See pynixify(1) manpage
-for extended documentation.
-
-Usage:
-    pynixify [options] [<requirement> [<requirement>...]]
-    pynixify [options] --tests <packages> [<requirement> [<requirement>...]]
-    pynixify [options] --all-tests [--ignore-tests <packages>] [<requirement> [<requirement>...]]
-
-Options:
-    -l <name>, --local <name>  Create a "python.pkgs.<name>" derivation
-                               using the current directory as source. Useful
-                               for packaging projects with a setup.py.
-
-    --nixpkgs URL              URL to a tarball containing the nixpkgs source.
-                               When specified, the generated expressions will
-                               use it instead of <nixpkgs>, improving
-                               reproducibility
-
-    -o <dir>, --output <dir>   Directory in which the tool will save the generated
-                               Nix expressions. If it doesn't exist, it will be
-                               automatically created. [default: pynixify/]
-
-    --all-tests                Include test requirements in all generated expressions,
-                               except for those explicitly excluded with --ignore-tests
-
-    --ignore-tests <packages>  Comma-separated list of packages for which we don't
-                               want their test requirements to be loaded
-
-    --tests <packages>         Comma-separated list of packages for which we do want
-                               their test requirements to be loaded.
-
-    --help                     This help text.
-"""
 import re
 import os
 import asyncio
+import argparse
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Dict, Optional, Tuple
-from docopt import docopt
 import pynixify.nixpkgs_sources
 from pynixify.base import Package
 from pynixify.nixpkgs_sources import (
@@ -109,28 +75,67 @@ async def _build_version_chooser(
 
 
 def main():
-    args = docopt(__doc__)
-    args = {k: v for (k, v) in args.items()
-            if v or isinstance(v, list)}
-
-    try:
-        args['--tests'] = args['--tests'].split(',')
-    except KeyError:
-        args['--tests'] = []
-
-    try:
-        args['--ignore-tests'] = args['--ignore-tests'].split(',')
-    except KeyError:
-        args['--ignore-tests'] = []
+    parser = argparse.ArgumentParser(
+        description=(
+            'Nix expression generator for Python packages. See '
+            'pynixify(1) manpage for extended documentation.'
+        ))
+    parser.add_argument('requirement', nargs='*')
+    parser.add_argument(
+        '-l', '--local',
+        metavar='NAME',
+        help=(
+            'Create a "python.pkgs.NAME" derivation using the current '
+            'directory as source. Useful for packaging projects with a '
+            'setup.py.'
+        ))
+    parser.add_argument(
+        '--nixpkgs',
+        help=(
+            'URL to a tarball containing the nixpkgs source. When specified, '
+            'the generated expressions will use it instead of <nixpkgs>, '
+            'improving reproducibility.'
+        ))
+    parser.add_argument(
+        '-o', '--output',
+        metavar='DIR',
+        default='pynixify/',
+        help=(
+            "Directory in which pynixify will save the generated Nix "
+            "expressions. If if doesn't exist, it will be automatically "
+            "created. [default. pynixify/]"
+        ))
+    parser.add_argument(
+        '--all-tests',
+        action='store_true',
+        help=(
+            "Include test requirements in all generated expressions, "
+            "except for those explicitly excluded with --ignore-tests."
+        ))
+    parser.add_argument(
+        '--ignore-tests',
+        metavar='PACKAGES',
+        help=(
+            "Comma-separated list of packages for which we don't want "
+            "their test requirements to be loaded."
+        ))
+    parser.add_argument(
+        '--tests',
+        metavar='PACKAGES',
+        help=(
+            "Comma-separated list of packages for which we do want "
+            "their test requirements to be loaded."
+        ))
+    args = parser.parse_args()
 
     asyncio.run(_main_async(
-        requirements=args['<requirement>'],
-        local=args.get('--local'),
-        output_dir=args.get('--output'),
-        nixpkgs=args.get('--nixpkgs'),
-        load_all_test_requirements='--all-tests' in args,
-        load_test_requirements_for=args['--tests'],
-        ignore_test_requirements_for=args['--ignore-tests'],
+        requirements=args.requirement,
+        local=args.local,
+        output_dir=args.output,
+        nixpkgs=args.nixpkgs,
+        load_all_test_requirements=args.all_tests,
+        load_test_requirements_for=args.tests.split(',') if args.tests else [],
+        ignore_test_requirements_for=args.ignore_tests.split(',') if args.ignore_tests else [],
     ))
 
 async def _main_async(

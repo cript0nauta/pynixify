@@ -26,7 +26,7 @@ setup(
     url="https://github.com/cript0nauta/pynixify",
     # long_description=open('README.txt').read(),
     tests_require=['pytest', 'pytest-asyncio', 'mypy'],
-    install_requires=['packaging', 'setuptools', 'aiohttp<4.0.0', 'aiofiles', 'docopt', 'Mako'],
+    install_requires=['packaging', 'setuptools', 'aiohttp<4.0.0', 'aiofiles', 'Mako'],
     entry_points={
         'console_scripts': [
             'pynixify=pynixify.command:main'
