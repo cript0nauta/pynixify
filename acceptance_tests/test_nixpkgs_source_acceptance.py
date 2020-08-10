@@ -19,7 +19,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 from packaging.requirements import Requirement
-from packaging.version import parse
+from packaging.version import Version, parse
 from pynixify.nixpkgs_sources import (
     load_nixpkgs_data,
     NixpkgsData,
@@ -194,7 +194,9 @@ async def test_build_sampleproject_nixpkgs():
         test_requirements=[c.package_for('pytest')],  # type: ignore
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
+    package.version = Version('1.2.3')
     meta = await package.metadata()
+    assert package.version == Version('1.3.1')
     sampleproject_expr = build_nix_expression(
         package, reqs, meta, sha256)
 

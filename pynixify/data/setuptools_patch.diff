@@ -35,7 +35,7 @@ index a71b2bbd..3dbb72bb 100644
  
 +        import json
 +        meta = {}
-+        meta_attrs = {'description', 'url', 'license'}
++        meta_attrs = {'description', 'url', 'license', 'version'}
 +        for meta_attr in meta_attrs:
 +            meta[meta_attr] = attrs.get(meta_attr)
 +        with (out / 'meta.json').open('w') as fp:

@@ -35,9 +35,11 @@ teardown(){
 @test "sampleproject-local" {
     git clone https://github.com/pypa/sampleproject
     cd sampleproject
+    git checkout 52966defd6a61e97295b0bb82cd3474ac3e11c7a
     sed -i 's/your/my/' src/sample/__init__.py
     pynixify --local sampleproject
     nix-build pynixify/nixpkgs.nix -A python3.pkgs.sampleproject
+    readlink result | tee | grep 'sampleproject-2.0.0'
     ./result/bin/sample | grep 'Call my main'
     nix-shell pynixify/shell.nix --command sample | grep 'Call my main'
 }

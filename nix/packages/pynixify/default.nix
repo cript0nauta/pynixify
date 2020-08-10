@@ -7,7 +7,7 @@
 
 buildPythonPackage rec {
   pname = "pynixify";
-  version = "0.1dev";
+  version = "0.1";
 
   src = lib.cleanSource ../../..;
 

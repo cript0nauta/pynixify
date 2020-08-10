@@ -18,7 +18,7 @@ from setuptools import setup
 
 setup(
     name='pynixify',
-    version='0.1dev',
+    version='0.1',
     packages=['pynixify',],
     package_data={'pynixify': ['data/*']},
     license='GPLv3+',
