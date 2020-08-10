@@ -113,3 +113,21 @@ $ cat pynixify/nixpkgs.nix
     };
 [...]
 ```
+
+### Developing a project without a setup.py
+
+Some Python projects don't have a `setup.py` file to indicate how should they
+be built. In most cases, they just have a `requirements.txt` file indicating
+which packages need to be installed. If this is the case of your project, you
+can use the `pynixify/shell.nix` file to setup a virtualenv-like environment
+with all requirements installed:
+
+```
+$ pynixify -r requirements.txt
+$ nix-shell pynixify/shell.nix
+```
+
+You can also specify which version of Python you want:
+```
+$ nix-shell pynixify/shell.nix --argstr python python36
+```
