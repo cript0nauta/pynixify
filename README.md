@@ -92,6 +92,7 @@ source. The `--local` option is also useful if you include your `pynixify/`
 directory inside your Git repository. This facilitates setting up a development
 environment of your project.
 
+<a id="pinning-nixpkgs"></a>
 ### Pinning Nixpkgs
 
 If you include the `pynixify/` directory inside your Git repository, it is
@@ -131,3 +132,73 @@ You can also specify which version of Python you want:
 ```
 $ nix-shell pynixify/shell.nix --argstr python python36
 ```
+
+
+## Limitations
+
+pynixify tries to reuse Nixpkgs packages whenever possible. Although this is
+mostly consireded a good thing, it has some drawbacks:
+
+* **You won't be using the latest PyPI packages**, but the versions available in
+  Nixpkgs, which can be older. If you must a newer version of a library,
+  consider adding `>=` to its requirement. If the library has a standard build mechanism,
+  that will work fine. Otherwise, it is recommended to manually change the
+  library's version in the Nixpkgs repository.
+* Your requirements file shouldn't be the output of `pip freeze` because it has
+  `==` in all requirements, therefore it makes reusing Nixpkgs packages harder. You
+  shouldn't treat your requirements file as a lockfile, but as an abstract 
+  definition indicating the minimum and maximum versions of each library. Keep in mind that
+  **you don't need a lockfile**: you can just [pin Nixpkgs](#pinning-nixpkgs) to have something
+  with the reproducibility of lockfiles. Or even better, since Nix also tracks the system
+  dependencies of each library!
+
+```
+# A bad requirements.txt file
+certifi==2020.6.20
+chardet==3.0.4
+idna==2.10
+requests==2.24.0
+tqdm==4.48.2
+urllib3==1.25.10
+```
+
+```
+# A great requirements.txt file
+requests
+tqdm>=4.47.0
+```
+
+
+## Similar software
+
+* [mach-nix][mach-nix]: A good alternative to pynixify. It is more focused on
+  non-Nix users, while pynixify targets users with experience using Nix, and
+  wanting to contribute to its ecosystem via Nixpkgs Pull requests.
+* [pypi2nix][pypi2nix]
+
+[mach-nix]: https://github.com/DavHau/mach-nix
+[pypi2nix]: https://github.com/nix-community/pypi2nix
+
+
+## Contributing
+
+PRs and issues describing bugs packaging some libraries are more than welcome!
+
+To setup a development environment, just clone this repo and run `nix shell`.
+
+pynixify has three different test suites:
+
+* unit tests, which are designed to be fast and isolated
+* "acceptance" tests which require network access and are slower
+* [bats][bats] end to end tests, which test running the `pynixify` command with different options
+
+You can run all three of them inside nix-shell:
+
+```
+$ pytest tests/ acceptance_tests/
+$ bats acceptance_tests/test_command.sh
+```
+
+They're also run on each push using GitHub actions.
+
+[bats]: https://github.com/sstephenson/bats

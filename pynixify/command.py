@@ -79,8 +79,7 @@ async def _build_version_chooser(
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            'Nix expression generator for Python packages. See '
-            'pynixify(1) manpage for extended documentation.'
+            'Nix expression generator for Python packages.'
         ))
     parser.add_argument('requirement', nargs='*')
     parser.add_argument(
