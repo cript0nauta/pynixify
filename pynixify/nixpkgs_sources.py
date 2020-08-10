@@ -20,6 +20,7 @@ import asyncio
 from pathlib import Path
 from typing import Sequence, Any, Optional
 from collections import defaultdict
+from multiprocessing import cpu_count
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
@@ -95,7 +96,7 @@ async def load_nixpkgs_data(extra_args):
     return ret
 
 
-async def run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
+async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
     if NIXPKGS_URL is not None:
         # TODO fix mypy hack
         args_ = list(args) + ['-I', f'nixpkgs={NIXPKGS_URL}']
@@ -127,3 +128,19 @@ async def run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
         print(stderr.decode(), file=sys.stderr)
         raise NixBuildError(f'nix-build failed with code {status}')
     return Path(stdout.strip().decode())
+
+
+sem: Optional[asyncio.BoundedSemaphore] = None
+
+
+def set_max_jobs(n: int):
+    global sem
+    sem = asyncio.BoundedSemaphore(n)
+
+
+async def run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
+    global sem
+    if not sem:
+        sem = asyncio.BoundedSemaphore(cpu_count())
+    async with sem:
+        return await _run_nix_build(*args, retries=retries, max_retries=5)

@@ -27,6 +27,7 @@ from pynixify.base import Package
 from pynixify.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
+    set_max_jobs,
 )
 from pynixify.pypi_api import (
     PyPICache,
@@ -137,6 +138,14 @@ def main():
             "than one file. Note that pip-specific options, such as "
             "'-e git+https....' are not supported."
         ))
+    parser.add_argument(
+        '--max-jobs',
+        type=int,
+        help=(
+            "Sets the maximum number of concurrent nix-build processes "
+            "executed by pynixify. If it isn't specified, it will be set to "
+            "the number of CPUs in the system."
+        ))
     args = parser.parse_args()
 
     asyncio.run(_main_async(
@@ -148,6 +157,7 @@ def main():
         load_all_test_requirements=args.all_tests,
         load_test_requirements_for=args.tests.split(',') if args.tests else [],
         ignore_test_requirements_for=args.ignore_tests.split(',') if args.ignore_tests else [],
+        max_jobs=args.max_jobs,
     ))
 
 async def _main_async(
@@ -158,10 +168,14 @@ async def _main_async(
         output_dir: Optional[str],
         load_test_requirements_for: List[str],
         ignore_test_requirements_for: List[str],
-        load_all_test_requirements: bool):
+        load_all_test_requirements: bool,
+        max_jobs: Optional[int]):
 
     if nixpkgs is not None:
         pynixify.nixpkgs_sources.NIXPKGS_URL = nixpkgs
+
+    if max_jobs is not None:
+        set_max_jobs(max_jobs)
 
     version_chooser: VersionChooser = await _build_version_chooser(
         load_test_requirements_for, ignore_test_requirements_for,
