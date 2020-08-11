@@ -4,7 +4,7 @@
 
 { overlays ? [ ], ... }@args:
 let
-  pypi2nixOverlay = self: super: {
+  pynixifyOverlay = self: super: {
     python2 = super.python2.override { inherit packageOverrides; };
     python27 = super.python27.override { inherit packageOverrides; };
     python3 = super.python3.override { inherit packageOverrides; };
@@ -21,4 +21,4 @@ let
 
   };
 
-in import nixpkgs (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
+in import nixpkgs (args // { overlays = [ pynixifyOverlay ] ++ overlays; })
