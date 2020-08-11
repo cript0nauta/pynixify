@@ -19,7 +19,7 @@ pynixify has the following objectives, which other alternatives don't satisfy
   expression will be of "Nixpkgs quality". [Here][expression] is an example of the
   expression of pynixify itself. 
 
-[expression]: https://github.com/cript0nauta/pynixify/blob/master/nix/packages/pynixify/default.nix
+[expression]: https://github.com/cript0nauta/pynixify/blob/main/nix/packages/pynixify/default.nix
 [deps]: https://github.com/infobyte/faraday/blob/master/requirements.txt
 
 ## Installation
@@ -60,14 +60,15 @@ generated in `pynixify/packages/`. In this case, it will include the definition
 for `sampleproject`.
 
 [sampleproject]: https://pypi.org/project/sampleproject/
-[nixpkgs.nix]: https://github.com/cript0nauta/pynixify/blob/master/nix/nixpkgs.nix
+[nixpkgs.nix]: https://github.com/cript0nauta/pynixify/blob/main/nix/nixpkgs.nix
 
 ### Developing a Python package
 
-When you're developing, is isn't useful to fetch the package source from PyPI.
-It would be better to use a local directory, so the changes you made are
-instantly reflected. When you use the `--local` option, pynixify will use the
-current directory as the package source, making package development easier:
+When you're developing a package, fetching its source from PyPI won't be
+useful. It would be better to use a local directory, so the changes you made in
+your machine are instantly reflected. When you use the `--local` option,
+pynixify will use the current directory as the package source, making package
+development easier:
 
 ```
 $ git clone https://github.com/pypa/sampleproject.git
@@ -80,7 +81,7 @@ Resolving peppercorn (from PyPIPackage(attr=sampleproject, version=0.1dev))
 
 $ nix-shell pynixify/nixpkgs.nix -A python3Packages.sampleproject
 
-[nix-shell:/tmp/sampleproject]$ echo "    print('Hello from pynixify!')" >>src/sample/__init__.py
+[nix-shell:/tmp/sampleproject]$ echo "    print('Hello from pynixify! ')" >>src/sample/__init__.py
 
 [nix-shell:/tmp/sampleproject]$ sample
 Call your main application code here
@@ -133,6 +134,32 @@ You can also specify which version of Python you want:
 $ nix-shell pynixify/shell.nix --argstr python python36
 ```
 
+## Suggested structure for your existing project
+
+Using pynixify can be a great way to introduce Nix to your team. Instead of
+complex Dockerfiles and install scripts, developers can just run `nix-shell`
+and set up a reproducible development environment immediately!
+
+In addition to adding the `pynixify/` directory to your Git repo, it is
+suggested to manually create a `default.nix` similar to [pynixify's
+one][defaultnix] (you may also want to [pin Nixpkgs](#pinning-nixpkgs)). This
+provides some advantages over using the `pynixify/` files directly:
+
+* Want to build the project? Just run `nix-build` with no arguments. There is
+  no more `nix-build pynixify/nixpkgs.nix -A yourProjectName`.
+* There is no need for an additional `shell.nix` file, since
+  `buildPythonPackage` activates the development mode automatically when using
+  `nix-shell`. Just a `default.nix` file is good enough.
+* As detailed in the [example file][defaultnix], you can override the generated
+  package to add system dependencies in case they're needed .
+
+For a real life example, you can look at [Faraday's release.nix
+file][releasenix]. It uses pynixify's generated definition, overrides a few
+things and adds instructions to build a Docker image and a Systemd unit for
+the project.
+
+[defaultnix]: https://github.com/cript0nauta/pynixify/blob/main/default.nix
+[releasenix]: https://github.com/infobyte/faraday/blob/dev/release.nix
 
 ## Limitations
 
@@ -145,12 +172,12 @@ mostly consireded a good thing, it has some drawbacks:
   that will work fine. Otherwise, it is recommended to manually change the
   library's version in the Nixpkgs repository.
 * Your requirements file shouldn't be the output of `pip freeze` because it has
-  `==` in all requirements, therefore it makes reusing Nixpkgs packages harder. You
+  `==` in all requirements. Therefore, it makes reusing Nixpkgs packages harder. You
   shouldn't treat your requirements file as a lockfile, but as an abstract 
   definition indicating the minimum and maximum versions of each library. Keep in mind that
   **you don't need a lockfile**: you can just [pin Nixpkgs](#pinning-nixpkgs) to have something
-  with the reproducibility of lockfiles. Or even better, since Nix also tracks the system
-  dependencies of each library!
+  with the reproducibility of lockfiles. Or even better than it, since Nix also
+  tracks the system dependencies of each library!
 
 ```
 # A bad requirements.txt file
