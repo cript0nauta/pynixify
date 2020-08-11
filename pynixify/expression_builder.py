@@ -93,7 +93,7 @@ expression_template = Template("""${DISCLAIMER}
 overlayed_nixpkgs_template = Template("""${DISCLAIMER}
     { overlays ? [ ], ... }@args:
     let
-        pypi2nixOverlay = self: super: {
+        pynixifyOverlay = self: super: {
             % for interpreter in interpreters:
                 ${interpreter} = super.${interpreter}.override { inherit packageOverrides; };
             % endfor
@@ -119,7 +119,7 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
             % endfor
         };
 
-    in import nixpkgs (args // { overlays = [ pypi2nixOverlay ] ++ overlays; })
+    in import nixpkgs (args // { overlays = [ pynixifyOverlay ] ++ overlays; })
 """)
 
 shell_nix_template = Template("""${DISCLAIMER}
