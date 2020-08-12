@@ -201,10 +201,16 @@ tqdm>=4.47.0
 * [mach-nix][mach-nix]: A good alternative to pynixify. It is more focused on
   non-Nix users, while pynixify targets users with experience using Nix, and
   wanting to contribute to its ecosystem via Nixpkgs Pull requests.
+* [nixpkgs-pytools][nixpkgs-pytools]: This library also targets creating
+  packages for nixpkgs. Unlike pynixify, it doesn't automatically create expressions
+  for the missing dependencies, and the generated expressions require manual tweaking
+  before being valid Nix. pynixify would be located in the middle between
+  nixpkgs-pytools and mach-nix.
 * [pypi2nix][pypi2nix]
 
 [mach-nix]: https://github.com/DavHau/mach-nix
 [pypi2nix]: https://github.com/nix-community/pypi2nix
+[nixpkgs-pytools]: https://github.com/nix-community/nixpkgs-pytools/
 
 
 ## Contributing
