@@ -159,17 +159,16 @@ class ChosenPackageRequirements:
             load_tests: bool):
         kwargs: Any = {}
 
-        # build_requirements uses packages from nixpkgs. The packages do not
-        # need to be included in the version chooser
         kwargs['build_requirements'] = []
         for req in package_requirements.build_requirements:
             if req.marker and not req.marker.evaluate():
                 continue
-            package_ = max(
-                version_chooser.nixpkgs_data.from_requirement(req),
-                key=operator.attrgetter('version')
-            )
-            kwargs['build_requirements'].append(package_)
+            package = version_chooser.package_for(req.name)
+            if package is None:
+                raise PackageNotFound(
+                    f'Package {req.name} not found in the version chooser'
+                )
+            kwargs['build_requirements'].append(package)
 
         # tests_requirements uses the packages in the version chooser
         packages: List[Package] = []
