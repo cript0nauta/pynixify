@@ -96,6 +96,20 @@ async def test_parse_single_requirements():
     assert c.package_for('passlib')
 
 
+@pytest.mark.asyncio
+async def test_parse_requirements_nixpkgs_with_wheel_source():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('testpath'))
+    pkg = c.package_for('testpath')
+    assert pkg is not None
+    await pkg.metadata()
+
+
 async def run_nix_build(expr: str) -> Path:
     proc = await asyncio.create_subprocess_exec(
         'nix-build', '-Q', '-E', '-',

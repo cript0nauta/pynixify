@@ -47,6 +47,16 @@ class PackageRequirements:
 
 async def eval_path_requirements(path: Path) -> PackageRequirements:
     nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
+    if path.name.endswith('.whl'):
+        # Some nixpkgs packages use a wheel as source, which don't have a
+        # setup.py file. For now, ignore them assume they have no dependencies
+        print(f'{path} is a wheel file instead of a source distribution. '
+              f'Assuming it has no dependencies.')
+        return PackageRequirements(
+            build_requirements=[],
+            test_requirements=[],
+            runtime_requirements=[]
+        )
     assert nix_expression_path.exists()
     nix_store_path = await run_nix_build(
         str(nix_expression_path),

@@ -40,6 +40,14 @@ class Package:
     async def metadata(self) -> PackageMetadata:
         from pynixify.package_requirements import run_nix_build, NixBuildError
         source = await self.source()
+        if source.name.endswith('.whl'):
+            # Some nixpkgs packages use a wheel as source, which don't have a
+            # setup.py file. For now, ignore them assume they have no metadata
+            return PackageMetadata(
+                description=None,
+                license=None,
+                url=None,
+            )
         nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
         assert nix_expression_path.exists()
         nix_store_path = await run_nix_build(
