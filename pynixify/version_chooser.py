@@ -109,7 +109,8 @@ class VersionChooser:
 
         await asyncio.gather(*(
             self.require(req, coming_from=pkg)
-            for req in (reqs.runtime_requirements + reqs.test_requirements)
+            for req in (reqs.runtime_requirements + reqs.test_requirements +
+                        reqs.build_requirements)
         ))
 
     async def require_local(self, pypi_name: str, src: Path):

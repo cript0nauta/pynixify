@@ -172,14 +172,14 @@ async def test_test_dependencies():
 
 
 @pytest.mark.asyncio
-async def test_does_not_user_build_dependencies():
+async def test_use_build_dependencies():
     nixpkgs = NixpkgsData(NIXPKGS_JSON)
     c = VersionChooser(nixpkgs, dummy_pypi, dummy_package_requirements({
         "pytz": ([Requirement('setuptools_scm')], [], []),
     }))
     await c.require(Requirement('pytz'))
     assert c.package_for('pytz')
-    assert c.package_for('setuptools_scm') is None
+    assert c.package_for('setuptools_scm')
 
 @pytest.mark.asyncio
 async def test_nixpkgs_transitive():
