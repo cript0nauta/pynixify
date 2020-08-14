@@ -68,11 +68,12 @@ class Package:
         with (nix_store_path / 'meta.json').open() as fp:
             metadata = json.load(fp)
             try:
-                version: str = metadata.pop('version')
+                version: Optional[str] = metadata.pop('version')
             except KeyError:
                 pass
             else:
-                # When using --local, version starts hardcoded to 0.1dev. This
-                # will update it to its real value
-                self.version = Version(version)
+                if version:  # it might be None
+                    # When using --local, version starts hardcoded to 0.1dev. This
+                    # will update it to its real value
+                    self.version = Version(version)
             return PackageMetadata(**metadata)
