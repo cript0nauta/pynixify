@@ -125,6 +125,17 @@ async def test_metadata_with_null_version():
     assert pkg.version == Version('2.1.1')
 
 
+@pytest.mark.asyncio
+async def test_packages_with_configure():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('brotli'))
+    pkg = c.package_for('brotli')
+
 
 async def run_nix_build(expr: str) -> Path:
     proc = await asyncio.create_subprocess_exec(

@@ -26,6 +26,9 @@ in stdenv.mkDerivation {
   src = cleanSource file;
   nativeBuildInputs = [ unzip ];
   buildInputs = [ pythonWithPackages ];
+  configurePhase = ''
+    true  # We don't want to execute ./configure
+  '';
   buildPhase = ''
     mkdir -p $out
     if ! PYPI2NIXKPGS=1 python setup.py install; then
