@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import sys
 import pytest
 import asyncio
 import tempfile
@@ -135,6 +136,21 @@ async def test_packages_with_configure():
     c = VersionChooser(nixpkgs, pypi, f)
     await c.require(Requirement('brotli'))
     pkg = c.package_for('brotli')
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform != 'linux', reason='doit requires pyinotify only in linux')
+async def test_packages_with_markers_in_extras_require():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('doit'))
+    assert c.package_for('doit')
+    assert c.package_for('pyinotify')
+    assert c.package_for('macfsevents') is None
 
 
 async def run_nix_build(expr: str) -> Path:

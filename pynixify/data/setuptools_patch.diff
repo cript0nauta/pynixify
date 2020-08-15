@@ -1,8 +1,8 @@
 diff --git a/setuptools/__init__.py b/setuptools/__init__.py
-index 83882511..54b49f16 100644
+index 83882511..259effd5 100644
 --- a/setuptools/__init__.py
 +++ b/setuptools/__init__.py
-@@ -155,14 +155,49 @@ def _install_setup_requires(attrs):
+@@ -155,14 +155,63 @@ def _install_setup_requires(attrs):
  
      # Honor setup.cfg's options.
      dist.parse_config_files(ignore_option_errors=True)
@@ -19,7 +19,6 @@ index 83882511..54b49f16 100644
 +            print("out environment variable not defined")
 +            sys.exit(1)
 +        setup_requires = dist.setup_requires
-+        install_requires = dist.install_requires
 +
 +        def norm_list_of_string(l):
 +            # Most setup() arguments take either a string or a list of strings.
@@ -28,9 +27,24 @@ index 83882511..54b49f16 100644
 +                return [l]
 +            return l
 +
++        install_requires = attrs.get('install_requires', dist.install_requires)
++        install_requires = list(norm_list_of_string(install_requires))
++
++        # Handle something like this:
++        # extras_require={
++        #     ':sys.platform == "darwin"': ['macfsevents'],
++        #     ':sys.platform == "linux"': ['pyinotify'],
++        # },
++        for (key, reqs) in attrs.get('extras_require', {}).items():
++            if not key.startswith(':'):
++                continue
++            marker = key[1:]
++            for req in norm_list_of_string(reqs):
++                install_requires.append(f'{req}; {marker}')
++
 +        targets = [
 +            ('setup_requires.txt', attrs.get('setup_requires', setup_requires)),
-+            ('install_requires.txt', attrs.get('install_requires', install_requires)),
++            ('install_requires.txt', install_requires),
 +            ('tests_requires.txt', attrs.get('tests_require', [])),
 +        ]
 +        for (filename, requirements) in targets:
