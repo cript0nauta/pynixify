@@ -206,11 +206,17 @@ tqdm>=4.47.0
   for the missing dependencies, and the generated expressions require manual tweaking
   before being valid Nix. pynixify would be located in the middle between
   nixpkgs-pytools and mach-nix.
-* [pypi2nix][pypi2nix]
+* [poetry2nix][poetry2nix]: If you use poetry, this can be a good alternative too. If
+  you're interested, see [this great blogpost about it][tweag-blogpost]. Most of the
+  concepts in it apply to pynixify too!
+* [pypi2nix][pypi2nix]: This one is abandoned and never worked for me. I
+  wouldn't recommend it.
 
 [mach-nix]: https://github.com/DavHau/mach-nix
 [pypi2nix]: https://github.com/nix-community/pypi2nix
 [nixpkgs-pytools]: https://github.com/nix-community/nixpkgs-pytools/
+[poetry2nix]: https://github.com/nix-community/poetry2nix
+[tweag-blogpost]: https://www.tweag.io/blog/2020-08-12-poetry2nix/
 
 
 ## Contributing
