@@ -1,13 +1,16 @@
 diff --git a/setuptools/__init__.py b/setuptools/__init__.py
-index a71b2bbd..3dbb72bb 100644
+index 83882511..54b49f16 100644
 --- a/setuptools/__init__.py
 +++ b/setuptools/__init__.py
-@@ -135,14 +135,48 @@ def _install_setup_requires(attrs):
-     ))
+@@ -155,14 +155,49 @@ def _install_setup_requires(attrs):
+ 
      # Honor setup.cfg's options.
      dist.parse_config_files(ignore_option_errors=True)
 -    if dist.setup_requires:
 -        dist.fetch_build_eggs(dist.setup_requires)
+-
+-
+-def setup(**attrs):
 +    if 'PYPI2NIXKPGS' in os.environ:
 +        from pathlib import Path
 +        try:
@@ -17,6 +20,14 @@ index a71b2bbd..3dbb72bb 100644
 +            sys.exit(1)
 +        setup_requires = dist.setup_requires
 +        install_requires = dist.install_requires
++
++        def norm_list_of_string(l):
++            # Most setup() arguments take either a string or a list of strings.
++            # Normalize this to a list of strings.
++            if isinstance(l, str):
++                return [l]
++            return l
++
 +        targets = [
 +            ('setup_requires.txt', attrs.get('setup_requires', setup_requires)),
 +            ('install_requires.txt', attrs.get('install_requires', install_requires)),
@@ -24,15 +35,8 @@ index a71b2bbd..3dbb72bb 100644
 +        ]
 +        for (filename, requirements) in targets:
 +            with (out / filename).open("w") as fp:
-+                if isinstance(requirements, str):
-+                    # According to setuptools docs:
-+                    # It should be a string or list of strings specifying what
-+                    # other distributions need to be present for the package’s
-+                    # tests to run
-+                    fp.write(requirements)
-+                else:
-+                    fp.write('\n'.join(requirements))
- 
++                fp.write('\n'.join(norm_list_of_string(requirements)))
++
 +        import json
 +        meta = {}
 +        meta_attrs = {'description', 'url', 'license', 'version'}
@@ -43,8 +47,7 @@ index a71b2bbd..3dbb72bb 100644
 +    else:
 +        if dist.setup_requires:
 +            dist.fetch_build_eggs(dist.setup_requires)
- 
--def setup(**attrs):
++
 +
 +def setup( **attrs):
      # Make sure we have any requirements needed to interpret 'attrs'.
@@ -53,5 +56,5 @@ index a71b2bbd..3dbb72bb 100644
 +    if 'PYPI2NIXKPGS' not in os.environ:
 +        return distutils.core.setup(**attrs)
  
- setup.__doc__ = distutils.core.setup.__doc__
  
+ setup.__doc__ = distutils.core.setup.__doc__
