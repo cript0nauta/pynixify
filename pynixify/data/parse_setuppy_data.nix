@@ -31,7 +31,7 @@ in stdenv.mkDerivation {
   '';
   buildPhase = ''
     mkdir -p $out
-    if ! PYPI2NIXKPGS=1 python setup.py install; then
+    if ! PYNIXIFY=1 python setup.py install; then
       # Indicate that fetching the result failed, but let the build succeed
       touch $out/failed
     fi

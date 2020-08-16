@@ -11,7 +11,7 @@ index 83882511..54b49f16 100644
 -
 -
 -def setup(**attrs):
-+    if 'PYPI2NIXKPGS' in os.environ:
++    if 'PYNIXIFY' in os.environ:
 +        from pathlib import Path
 +        try:
 +            out = Path(os.environ['out'])
@@ -53,7 +53,7 @@ index 83882511..54b49f16 100644
      # Make sure we have any requirements needed to interpret 'attrs'.
      _install_setup_requires(attrs)
 -    return distutils.core.setup(**attrs)
-+    if 'PYPI2NIXKPGS' not in os.environ:
++    if 'PYNIXIFY' not in os.environ:
 +        return distutils.core.setup(**attrs)
  
  
