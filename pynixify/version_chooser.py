@@ -46,10 +46,28 @@ class VersionChooser:
         self.evaluate_requirements = req_evaluate
         self.should_load_tests = should_load_tests
 
-    async def require(self, r: Requirement, coming_from: Package=None):
+    async def require(self, r: Requirement, coming_from: Optional[Package]=None):
         pkg: Package
 
         if r.marker and not r.marker.evaluate():
+            return
+
+        try:
+            self.nixpkgs_data.from_requirement(r)
+        except PackageNotFound:
+            is_in_nixpkgs = False
+        else:
+            is_in_nixpkgs = True
+        if (isinstance(coming_from, NixPackage) and
+                is_in_nixpkgs and
+                not self.nixpkgs_data.from_requirement(r)):
+            # This shouldn't happen in an ideal world. Unfortunately,
+            # nixpkgs does some patching to packages to disable some
+            # requirements. Because we don't use these patches, the
+            # dependency resolution would fail if we don't ignore the
+            # requirement.
+            print(f"warning: ignoring requirement {r} from {coming_from} "
+                  f"because there is no matching version in nixpkgs packages")
             return
 
         print(f'Resolving {r}{f" (from {coming_from})" if coming_from else ""}')
