@@ -40,12 +40,27 @@ class NixPackage(Package):
         return self.__attr
 
     async def source(self, extra_args=[]):
+        expr = """
+        with import <nixpkgs> {};
+        let
+          pkg = python3Packages."ATTR";
+        in
+          if pkg ? "src" then
+            pkg.src
+          else
+            # In some cases, a package can have no source. I this case, return
+            # a dummy source so the requirements parser fails in an expected way
+            writeTextFile {
+              text = "raise RuntimeError('This is expected to fail')";
+              name = "ATTR_dummy_src";
+              destination = "/setup.py";
+            }
+        """.replace('ATTR', self.attr)
         args = [
             '--no-out-link',
-            '<nixpkgs>',
             '--no-build-output',
-            '-A',
-            f'python3Packages."{self.attr}".src',
+            '-E',
+            expr
         ]
         args += extra_args
         return await run_nix_build(*args)

@@ -112,6 +112,20 @@ async def test_parse_requirements_nixpkgs_with_wheel_source():
 
 
 @pytest.mark.asyncio
+async def test_parse_requirements_nixpkgs_with_no_source():
+    data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
+    nixpkgs = NixpkgsData(data)
+    pypi = PyPIData(PyPICache())
+    async def f(pkg):
+        return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
+    c = VersionChooser(nixpkgs, pypi, f)
+    await c.require(Requirement('pycrypto'))
+    pkg = c.package_for('pycrypto')
+    assert pkg is not None
+    await pkg.metadata()
+
+
+@pytest.mark.asyncio
 async def test_metadata_with_null_version():
     data = await load_nixpkgs_data(PINNED_NIXPKGS_ARGS)
     nixpkgs = NixpkgsData(data)
