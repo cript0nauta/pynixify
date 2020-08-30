@@ -95,9 +95,9 @@ class VersionChooser:
         found_pypi = True
         found_nixpkgs = True
 
-        try:
+        if canonicalize_name(r.name) in self._local_packages:
             pkg = self._local_packages[canonicalize_name(r.name)]
-        except KeyError:
+        else:
             try:
                 for p in self.nixpkgs_data.from_requirement(r):
                     pkgs.append(p)
