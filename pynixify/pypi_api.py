@@ -106,7 +106,40 @@ class PyPIData:
                     pypi_name=canonicalize_name(req.name),
                     pypi_cache=self.pypi_cache,
                 ))
+        if not matching:
+            self._hint_versions(req, response)
         return matching
+
+    def _hint_versions(self, req: Requirement, response):
+        pre_releases = [
+            version
+            for version in response['releases']
+            if not req.specifier.contains(version, prereleases=False) and
+                   req.specifier.contains(version, prereleases=True)
+        ]
+        if pre_releases:
+            print(f'warning: {req.name} has some pre-release versions matching the specified '
+                  f'requirement. pynixify deliberately ignores pre-releases because they can '
+                  f'be unstable.',
+                  file=sys.stderr)
+            suggested_requirements = [f'{req.name}=={version}' for version in pre_releases]
+            print(f'hint: consider adding one of the following requirements in order to force '
+                  f'the usage of pre-release versions: {", ".join(suggested_requirements)}',
+                  file=sys.stderr)
+
+        matching_versions = [
+            version
+            for version in response['releases']
+            if version in req.specifier
+        ]
+        for version in matching_versions:
+            if all(e['packagetype'] == 'bdist_wheel'
+                   for e in response['releases'][version]):
+                print(f'warning: {req.name}=={version} only provides wheel distributions (.whl). '
+                      f'pynixify uses source distributions (.tar.gz), so it will ignore this '
+                      f'version. Consider asking {req.name} maintainers to upload source '
+                      f'distributions to PyPI',
+                      file=sys.stderr)
 
 
 class PyPICache:
