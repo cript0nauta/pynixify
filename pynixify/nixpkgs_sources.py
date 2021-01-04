@@ -117,8 +117,9 @@ async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path
         args_ = list(args) + ['-I', f'nixpkgs={NIXPKGS_URL}']
     else:
         args_ = list(args)
+    # TODO remove mypy ignore below and fix compatibility with mypy 0.790
     proc = await asyncio.create_subprocess_exec(
-        'nix-build', *args_, stdout=asyncio.subprocess.PIPE,
+        'nix-build', *args_, stdout=asyncio.subprocess.PIPE,  # type: ignore
         stderr=asyncio.subprocess.PIPE)
     (stdout, stderr) = await proc.communicate()
     status = await proc.wait()
