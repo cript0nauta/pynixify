@@ -11,24 +11,26 @@ let
     # Note: __unfix__ is not a python package, it is related to fixed point stuff
       (builtins.removeAttrs a [ "__unfix__" ]));
 
+
+  lookUpSource = name: value:
+    let 
+      d = {attr=name; version=value.version;};
+    in
+      if !value ? src then [ (d // {src=null;})]
+      else if !(builtins.tryEval value.src ).success then [ ]
+      else if !value.src ? urls then [(d // {src=null;})]
+      else [ (d // {src=builtins.head value.src.urls;})];
+
   sources = packages:
     lib.concatMap ({ key, value }:
-      if builtins.isNull value then
+    if !(builtins.tryEval value).success  then [ ]
+    else if builtins.isNull value then
       # Example: python3Packages.backports_lzma
         [ ]
       else if !value ? version then
       # Example: python3Packages.dlib
         [ ]
-      else [{
-        attr = key;
-        src = if !value ? src then
-          null
-        else if !value.src ? urls then
-          null
-        else
-          builtins.head value.src.urls;
-        version = value.version;
-      }]) (attrsToList packages);
+      else lookUpSource key value) (attrsToList packages);
 
   urlToPypiName = url:
     if builtins.isNull url then
@@ -71,7 +73,6 @@ let
   # lib.groupBy (x: x.pypiName) (keepPypi (sources validPackages))
 in pipe [
   python3Packages
-  (lib.filterAttrs (k: v: (builtins.tryEval v).success))
   sources
   # keepPypi
   usePypiNameIfPossible
