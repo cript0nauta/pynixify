@@ -16,10 +16,14 @@ let
     let 
       d = {attr=name; version=value.version;};
     in
-      if !value ? src then [ (d // {src=null;})]
-      else if !(builtins.tryEval value.src ).success then [ ]
-      else if !value.src ? urls then [(d // {src=null;})]
-      else [ (d // {src=builtins.head value.src.urls;})];
+    if !value ? src then 
+      [ (d // {src=null;})]
+    else if !(builtins.tryEval value.src ).success then 
+      [ ]
+    else if !value.src ? urls then 
+      [(d // {src=null;})]
+    else 
+      [ (d // {src=builtins.head value.src.urls;})];
 
   sources = packages:
     lib.concatMap ({ key, value }:
