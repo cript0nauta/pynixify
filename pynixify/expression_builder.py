@@ -187,6 +187,8 @@ def build_overlayed_nixpkgs(
         'python36',
         'python37',
         'python38',
+        'python39',
+        'python310'
     ]
 
     return overlayed_nixpkgs_template.render(DISCLAIMER=DISCLAIMER, **locals())
