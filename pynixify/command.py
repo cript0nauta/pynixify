@@ -41,6 +41,7 @@ from pynixify.version_chooser import (
 from pynixify.expression_builder import (
     build_nix_expression,
     build_overlayed_nixpkgs,
+    build_overlay_expr,
     build_shell_nix_expression,
     nixfmt,
 )
@@ -107,6 +108,12 @@ def main():
             "created. [default. pynixify/]"
         ))
     parser.add_argument(
+        '-O', '--overlay-only',
+        action='store_true',
+        help=(
+            "Generate only overlay expresion."
+        ))
+    parser.add_argument(
         '--all-tests',
         action='store_true',
         help=(
@@ -157,6 +164,7 @@ def main():
         load_test_requirements_for=args.tests.split(',') if args.tests else [],
         ignore_test_requirements_for=args.ignore_tests.split(',') if args.ignore_tests else [],
         max_jobs=args.max_jobs,
+        generate_only_overlay=args.overlay_only,
     ))
 
 async def _main_async(
@@ -168,7 +176,8 @@ async def _main_async(
         load_test_requirements_for: List[str],
         ignore_test_requirements_for: List[str],
         load_all_test_requirements: bool,
-        max_jobs: Optional[int]):
+        max_jobs: Optional[int],
+        generate_only_overlay:bool):
 
     if nixpkgs is not None:
         pynixify.nixpkgs_sources.NIXPKGS_URL = nixpkgs
@@ -239,6 +248,13 @@ async def _main_async(
         write_package_expression(package)
         for package in version_chooser.all_pypi_packages()
     ))
+
+    if generate_only_overlay:
+        with (base_path / 'overlay.nix').open('w') as fp:
+            expr = build_overlay_expr(overlays)
+            fp.write(await nixfmt(expr))
+            return
+
 
     with (base_path / 'nixpkgs.nix').open('w') as fp:
         if nixpkgs is None:
