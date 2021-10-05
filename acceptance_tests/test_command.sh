@@ -146,3 +146,16 @@ teardown(){
     nix-shell pynixify/shell.nix \
         --command 'set -e; sample; flask --version; ipython --version'
 }
+
+@test "--overlay-only" {
+    pynixify -O sampleproject==1.3.1
+    nix-build -E '
+    with import <nixpkgs> {};
+    let
+      python = let
+        packageOverrides = import ./pynixify/overlay.nix;
+      in pkgs.python3.override {inherit packageOverrides; self = python;};
+
+    in python.pkgs.sampleproject'
+    ./result/bin/sample | grep 'Call your main'
+}
