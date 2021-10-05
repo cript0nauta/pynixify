@@ -164,6 +164,16 @@ def build_nix_expression(
     nix = escape_string
     return expression_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
+def build_overlay_expr(overlays: Mapping[str, Path]):
+    return Template("""
+    self: super: {
+            % for (package_name, path) in overlays.items():
+                ${package_name} =
+                    self.callPackage
+                        ${'' if path.is_absolute() else './'}${str(path).replace('/default.nix', '')} {};
+
+            % endfor
+    }""").render(overlays=overlays)
 
 def build_overlayed_nixpkgs(
         overlays: Mapping[str, Path],
