@@ -22,7 +22,7 @@ from typing import Any, Dict, Callable, Awaitable, Optional, List, Tuple
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
-from pynixify.base import Package
+from pynixify.base import Package, parse_version
 from pynixify.nixpkgs_sources import NixpkgsData, NixPackage
 from pynixify.pypi_api import PyPIData, PyPIPackage
 from pynixify.package_requirements import (
@@ -137,7 +137,7 @@ class VersionChooser:
             pypi_name=pypi_name,
             download_url='',
             sha256='',
-            version='0.1dev',
+            version=parse_version('0.1dev'),
             pypi_cache=self.pypi_data.pypi_cache,
             local_source=src,
         )
