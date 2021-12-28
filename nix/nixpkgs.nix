@@ -23,6 +23,8 @@ let
 
     types-aiofiles = self.callPackage ./packages/types-aiofiles { };
 
+    types-setuptools = self.callPackage ./packages/types-setuptools { };
+
   };
 
 in import nixpkgs (args // { overlays = [ pynixifyOverlay ] ++ overlays; })
