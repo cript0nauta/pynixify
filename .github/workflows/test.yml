@@ -2,6 +2,8 @@ name: "Test"
 on:
   pull_request:
   push:
+  schedule:
+    - cron: '5 19 * * 5'  # At 19:05 on Friday
 jobs:
   nixos-20-09:
     runs-on: ubuntu-latest
