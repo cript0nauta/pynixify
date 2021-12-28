@@ -1,6 +1,8 @@
 # with (import ./pynixify/nixpkgs.nix { });  # Use this in projects other than pynixify
 with (import ./nix/nixpkgs.nix { });
 
+{ runMypy ? true }:
+
 # Use pynixify's generated expression, but override it to add additional
 # dependencies and to convert it to an application in order to improve the
 # derivation name.
@@ -10,7 +12,7 @@ python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
     checkInputs = drv.checkInputs ++ [ nix nixfmt bats ];
 
     checkPhase = ''
-      mypy pynixify/ tests/ acceptance_tests/
+      ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
       pytest tests/ -m 'not usesnix'  # We can't run Nix inside Nix builds
     '';
 
