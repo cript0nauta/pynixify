@@ -7,7 +7,10 @@ let
 
   patchedSetuptools = python.pkgs.setuptools.overrideAttrs (ps: {
     # src = (import <nixpkgs> {}).lib.cleanSource ./setuptools;
+
     patches = [ ./setuptools_patch.diff ];
+    patchFlags = lib.optionals (lib.versionOlder "61" python.pkgs.setuptools.version) ["--merge" "-p1"];
+
   });
 
   pythonWithPackages = python.withPackages (ps: [ patchedSetuptools ]);

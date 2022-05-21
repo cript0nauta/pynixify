@@ -12,12 +12,18 @@ let
     python36 = super.python36.override { inherit packageOverrides; };
     python37 = super.python37.override { inherit packageOverrides; };
     python38 = super.python38.override { inherit packageOverrides; };
+    python39 = super.python39.override { inherit packageOverrides; };
+    python310 = super.python310.override { inherit packageOverrides; };
   };
 
   nixpkgs = <nixpkgs>;
 
   packageOverrides = self: super: {
     pynixify = self.callPackage ./packages/pynixify { };
+
+    types-aiofiles = self.callPackage ./packages/types-aiofiles { };
+
+    types-setuptools = self.callPackage ./packages/types-setuptools { };
 
   };
 

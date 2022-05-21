@@ -3,7 +3,7 @@
 # deleted, and you will lose the changes you made to it.
 
 { Mako, aiofiles, aiohttp, buildPythonPackage, fetchPypi, lib, mypy, packaging
-, pytest, pytest-asyncio, setuptools }:
+, pytest, pytest-asyncio, setuptools, types-aiofiles, types-setuptools }:
 
 buildPythonPackage rec {
   pname = "pynixify";
@@ -12,7 +12,7 @@ buildPythonPackage rec {
   src = lib.cleanSource ../../..;
 
   propagatedBuildInputs = [ packaging setuptools aiohttp aiofiles Mako ];
-  checkInputs = [ pytest pytest-asyncio mypy ];
+  checkInputs = [ pytest pytest-asyncio mypy types-aiofiles types-setuptools ];
 
   checkPhase = "true  # TODO fill with the real command for testing";
 

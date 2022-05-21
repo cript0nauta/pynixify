@@ -161,7 +161,7 @@ async def test_packages_with_markers_in_extras_require():
     async def f(pkg):
         return await evaluate_package_requirements(pkg, PINNED_NIXPKGS_ARGS)
     c = VersionChooser(nixpkgs, pypi, f)
-    await c.require(Requirement('doit'))
+    await c.require(Requirement('doit==0.32.0'))
     assert c.package_for('doit')
     assert c.package_for('pyinotify')
     assert c.package_for('macfsevents') is None

@@ -23,8 +23,8 @@ from collections import defaultdict
 from multiprocessing import cpu_count
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
-from packaging.version import Version, parse
-from pynixify.base import Package
+from packaging.version import Version
+from pynixify.base import Package, parse_version
 from pynixify.exceptions import PackageNotFound, NixBuildError
 
 NIXPKGS_URL: Optional[str] = None
@@ -82,7 +82,7 @@ class NixpkgsData:
         except KeyError:
             raise PackageNotFound(f'{name} is not defined in nixpkgs')
         return [
-            NixPackage(attr=drv['attr'], version=parse(drv['version']))
+            NixPackage(attr=drv['attr'], version=parse_version(drv['version']))
             for drv in data
         ]
 

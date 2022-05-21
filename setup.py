@@ -25,7 +25,13 @@ setup(
     description="Nix expression generator for Python packages",
     url="https://github.com/cript0nauta/pynixify",
     # long_description=open('README.txt').read(),
-    tests_require=['pytest', 'pytest-asyncio', 'mypy'],
+    tests_require=[
+        'pytest',
+        'pytest-asyncio',
+        'mypy',
+        'types-aiofiles',
+        'types-setuptools',
+        ],
     install_requires=['packaging', 'setuptools', 'aiohttp<4.0.0', 'aiofiles', 'Mako'],
     entry_points={
         'console_scripts': [

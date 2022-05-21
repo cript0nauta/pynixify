@@ -30,7 +30,7 @@ from urllib.parse import quote, urlparse
 from packaging.utils import canonicalize_name
 from packaging.requirements import Requirement
 from packaging.version import Version, parse
-from pynixify.base import Package
+from pynixify.base import Package, parse_version
 from pynixify.exceptions import (
     IntegrityError
 )
@@ -101,7 +101,7 @@ class PyPIData:
             if version in req.specifier:
                 matching.append(PyPIPackage(
                     sha256=data['digests']['sha256'],
-                    version=parse(version),
+                    version=parse_version(version),
                     download_url=data['url'],
                     pypi_name=canonicalize_name(req.name),
                     pypi_cache=self.pypi_cache,
