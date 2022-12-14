@@ -45,7 +45,7 @@ teardown(){
 }
 
 @test "faraday-agent-dispatcher" {
-    pynixify faraday-agent-dispatcher
+    pynixify 'faraday-agent-dispatcher<2.5.0'  # TODO fix pytenable issue and use latest version
     nix-build pynixify/nixpkgs.nix -A python3.pkgs.faraday-agent-dispatcher
     grep 'fetchPypi {' pynixify/packages/faraday-agent-dispatcher/default.nix
     ./result/bin/faraday-dispatcher --help
