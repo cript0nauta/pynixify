@@ -122,7 +122,7 @@ teardown(){
 }
 
 @test "shell.nix" {
-    pynixify sampleproject
+    pynixify 'sampleproject<3'
     cat pynixify/shell.nix
     nix-shell pynixify/shell.nix --command 'sample' | grep 'Call your main'
     nix-shell pynixify/shell.nix \
