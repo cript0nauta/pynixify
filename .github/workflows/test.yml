@@ -5,28 +5,28 @@ on:
   schedule:
     - cron: '5 19 * * 5'  # At 19:05 on Friday
 jobs:
-  nixos-20-09:
+  nixos-21-11:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.3.4
     - uses: cachix/install-nix-action@v12
       with:
-        nix_path: nixpkgs=channel:nixos-20.09
-    - run: nix-build
+        nix_path: nixpkgs=channel:nixos-21.11
+    - run: nix-build --arg runMypy false  # TODO run mypy
     - run: nix-shell --command 'pytest -v tests/ acceptance_tests'
     - run: |
-        nix-env -if default.nix && nix-shell -p bats --command './acceptance_tests/test_command.sh'
-  nixos-21-05:
+        nix-env -if default.nix --arg runMypy false && nix-shell -p bats --command './acceptance_tests/test_command.sh'
+  nixos-22-11:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.3.4
     - uses: cachix/install-nix-action@v12
       with:
-        nix_path: nixpkgs=channel:nixos-21.05
-    - run: nix-build
+        nix_path: nixpkgs=channel:nixos-22.11
+    - run: nix-build --arg runMypy false  # TODO run mypy
     - run: nix-shell --command 'pytest -v tests/ acceptance_tests'
     - run: |
-        nix-env -if default.nix && nix-shell -p bats --command './acceptance_tests/test_command.sh'
+        nix-env -if default.nix --arg runMypy false && nix-shell -p bats --command './acceptance_tests/test_command.sh'
   nixos-unstable:
     runs-on: ubuntu-latest
     steps:
@@ -37,4 +37,4 @@ jobs:
     - run: nix-build --arg runMypy false  # TODO run mypy in unstable
     - run: nix-shell --command 'pytest -v tests/ acceptance_tests'
     - run: |
-        nix-env -if default.nix --arg runMypy false && nix-shell -p bats --command './acceptance_tests/test_command.sh'  # TODO run mypy in unstable
+        nix-env -if default.nix --arg runMypy false && nix-shell -p bats --command './acceptance_tests/test_command.sh'
