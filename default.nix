@@ -20,9 +20,11 @@ in
 # dependencies and to convert it to an application in order to improve the
 # derivation name.
 python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
-  (drv: {
+  (drv: rec {
     # Add system dependencies
     checkInputs = drv.checkInputs ++ [ nix chosenNixfmt bats ];
+
+    nativeBuildInputs = checkInputs;  # TODO check why we need this
 
     checkPhase = ''
       ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
