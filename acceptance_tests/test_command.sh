@@ -126,10 +126,6 @@ teardown(){
     cat pynixify/shell.nix
     nix-shell pynixify/shell.nix --command 'sample' | grep 'Call your main'
     nix-shell pynixify/shell.nix \
-        --argstr python "python37" \
-        --command 'python --version' |
-        grep 'Python 3.7'
-    nix-shell pynixify/shell.nix \
         --argstr python "python38" \
         --command 'python --version' |
         grep 'Python 3.8'
