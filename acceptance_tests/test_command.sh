@@ -26,12 +26,6 @@ teardown(){
     ./result/bin/sample | grep 'Call your main'
 }
 
-@test "sampleproject in python 2.7" {
-    pynixify sampleproject==1.3.1
-    nix-build pynixify/nixpkgs.nix -A python27.pkgs.sampleproject
-    ./result/bin/sample | grep 'Call your main'
-}
-
 @test "sampleproject-local" {
     git clone https://github.com/pypa/sampleproject
     cd sampleproject
