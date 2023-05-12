@@ -8,8 +8,17 @@ let
   patchedSetuptools = python.pkgs.setuptools.overrideAttrs (ps: {
     # src = (import <nixpkgs> {}).lib.cleanSource ./setuptools;
 
-    patches = [ ./setuptools_patch.diff ];
-    patchFlags = lib.optionals (lib.versionOlder "61" python.pkgs.setuptools.version) ["--merge" "-p1"];
+    patches = [
+      (if lib.versionOlder "66" python.pkgs.setuptools.version then
+        ./setuptools_patch.diff
+      else
+        ./old_setuptools_patch.diff)
+    ];
+    patchFlags =
+      lib.optionals (lib.versionOlder "61" python.pkgs.setuptools.version) [
+        "--merge"
+        "-p1"
+      ];
 
   });
 
