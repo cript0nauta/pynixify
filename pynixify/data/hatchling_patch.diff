@@ -1,0 +1,41 @@
+diff --git a/src/hatchling/metadata/core.py b/src/hatchling/metadata/core.py
+index 24544ad1..f255bfec 100644
+--- a/src/hatchling/metadata/core.py
++++ b/src/hatchling/metadata/core.py
+@@ -11,6 +11,14 @@ if sys.version_info >= (3, 11):
+ else:
+     import tomli as tomllib
+
++if 'PYNIXIFY' in os.environ:
++    from pathlib import Path
++    try:
++        pynix_out = Path(os.environ['out'])
++    except KeyError:
++        print("out environment variable not defined")
++        sys.exit(1)
++
+
+ def load_toml(path):
+     with open(path, encoding='utf-8') as f:
+@@ -250,6 +258,9 @@ class BuildMetadata:
+                     raise ValueError(f'Dependency #{i} of field `build-system.requires` is invalid: {e}')
+
+             self._requires_complex = requires_complex
++            if 'PYNIXIFY' in os.environ:
++                with (pynix_out / "setup_requires.txt").open("w") as fp:
++                    fp.write('\n'.join([str(req) for req in self._requires_complex]))
+
+         return self._requires_complex
+
+@@ -1074,6 +1085,11 @@ class CoreMetadata:
+                     dependencies_complex[get_normalized_dependency(requirement)] = requirement
+
+             self._dependencies_complex = dict(sorted(dependencies_complex.items()))
++            if 'PYNIXIFY' in os.environ:
++                with (pynix_out / "install_requires.txt").open("w") as fp:
++                    fp.write('\n'.join([str(req) for req in self._dependencies_complex]))
++                with (pynix_out / "tests_requires.txt").open("w") as fp:
++                    fp.write('\n'.join([str(req) for req in self._dependencies_complex]))
+
+         return self._dependencies_complex
+

@@ -37,6 +37,8 @@ let
     # check in passthru.tests.pytest to escape infinite recursion on pytest
     doCheck = false;
   };
+  hatchling = pkgs.python3.pkgs.hatchling.overrideAttrs
+    (ps: { patches = [ ./hatchling_patch.diff ]; });
   hatchvcs = pkgs.python3.pkgs.buildPythonPackage rec {
     pname = "hatch-vcs";
     version = "0.2.0";
@@ -50,9 +52,9 @@ let
       sha256 = "sha256-mRPXM7NO7JuwNF0GJsoyFlpK0t4V0c5kPDbQnKkIq/8=";
     };
 
-    nativeBuildInputs = [ pkgs.python3.pkgs.hatchling ];
+    nativeBuildInputs = [ hatchling ];
 
-    propagatedBuildInputs = [ pkgs.python3.pkgs.hatchling setuptoolsscm ];
+    propagatedBuildInputs = [ hatchling setuptoolsscm ];
 
     checkInputs = [ pkgs.git pkgs.python3.pkgs.pytestCheckHook ];
 
@@ -65,8 +67,8 @@ let
     pythonImportsCheck = [ "hatch_vcs" ];
   };
 
-  pythonWithPackages = pkgs.python3.withPackages
-    (ps: [ patchedSetuptools pkgs.python3.pkgs.hatchling hatchvcs ]);
+  pythonWithPackages =
+    pkgs.python3.withPackages (ps: [ patchedSetuptools hatchling hatchvcs ]);
 
   cleanSource = src:
     pkgs.lib.cleanSourceWith {
@@ -92,11 +94,9 @@ in pkgs.stdenv.mkDerivation {
     fi
     if test -f pyproject.toml && grep "hatchling.build" pyproject.toml; then
         echo 'mode = "local"' > config.toml
-        #echo '[build-system]' >> config.toml
-        #echo 'build-backend = "hatchling.build"' >> config.toml
-        cat config.toml
-        hatch --config config.toml --data-dir $out/data --cache-dir $out/cache build
-        exit 0
+        if PYNIXIFY=1 hatch --config config.toml --data-dir $out/data --cache-dir $out/cache build; then
+            exit 0
+        fi
     fi
     # Indicate that fetching the result failed, but let the build succeed
     touch $out/failed
