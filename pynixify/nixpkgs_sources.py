@@ -126,6 +126,7 @@ async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path
         stderr=asyncio.subprocess.PIPE,
     )
     (stdout, stderr) = await proc.communicate()
+    # sys.stdout.write("%s\n%s" % (stdout.decode(), stderr.decode()))
     status = await proc.wait()
 
     if b"all build users are currently in use" in stderr and retries < max_retries:
@@ -135,7 +136,7 @@ async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path
             f"warning: All build users are currently in use. "
             f"Retrying in {2**retries} seconds\n"
         )
-        await asyncio.sleep(2**retries)
+        await asyncio.sleep(2 ** retries)
         return await run_nix_build(*args, retries=retries + 1, max_retries=max_retries)
     elif retries >= max_retries:
         sys.stderr.write(f"error: Giving up after {max_retries} failed retries\n")
