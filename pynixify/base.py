@@ -28,6 +28,7 @@ class PackageMetadata:
     description: Optional[str]
     license: Optional[str]
     url: Optional[str]
+    _fmt: Optional[str] = "pyproject"
 
 
 @dataclass

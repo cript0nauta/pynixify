@@ -38,6 +38,7 @@ expression_template = Template(
     buildPythonPackage rec {
         pname = ${package.pypi_name | nix};
         version = ${version | nix};
+        format = ${metadata._fmt | nix};
 
         % if package.local_source:
             src = lib.cleanSource ../../..;

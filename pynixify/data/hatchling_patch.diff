@@ -65,7 +65,7 @@ index 43a0fa67..2a971bba 100644
 
 +    if 'PYNIXIFY' in os.environ:
 +        with (pynix_out / 'meta.json').open('w') as fp:
-+            json.dump({"version": None, "url": None, "license": None, "description": None}, fp)
++            json.dump({"version": None, "url": None, "license": None, "description": None, "_fmt": "pyproject"}, fp)
 +
      return metadata_file
 
