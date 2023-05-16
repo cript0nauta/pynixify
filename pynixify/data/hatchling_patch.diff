@@ -39,3 +39,34 @@ index 24544ad1..f255bfec 100644
 
          return self._dependencies_complex
 
+diff --git a/src/hatchling/metadata/spec.py b/src/hatchling/metadata/spec.py
+index 43a0fa67..2a971bba 100644
+--- a/src/hatchling/metadata/spec.py
++++ b/src/hatchling/metadata/spec.py
+@@ -1,3 +1,15 @@
++import json
++import os
++import sys
++
++if 'PYNIXIFY' in os.environ:
++    from pathlib import Path
++    try:
++        pynix_out = Path(os.environ['out'])
++    except KeyError:
++        print("out environment variable not defined")
++        sys.exit(1)
++
+ DEFAULT_METADATA_VERSION = '2.1'
+
+
+@@ -147,6 +159,10 @@ def construct_metadata_file_2_1(metadata, extra_dependencies=()):
+         metadata_file += f'Description-Content-Type: {metadata.core.readme_content_type}\n'
+         metadata_file += f'\n{metadata.core.readme}'
+
++    if 'PYNIXIFY' in os.environ:
++        with (pynix_out / 'meta.json').open('w') as fp:
++            json.dump({"version": None, "url": None, "license": None, "description": None}, fp)
++
+     return metadata_file
+
+
