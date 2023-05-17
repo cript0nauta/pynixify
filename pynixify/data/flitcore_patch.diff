@@ -1,0 +1,83 @@
+diff --git a/flit_core/flit_core/buildapi.py b/flit_core/flit_core/buildapi.py
+index 963bf61..f48cbf8 100644
+--- a/flit_core/flit_core/buildapi.py
++++ b/flit_core/flit_core/buildapi.py
+@@ -3,6 +3,7 @@ import logging
+ import io
+ import os
+ import os.path as osp
++import sys
+ from pathlib import Path
+ 
+ from .common import (
+@@ -13,6 +14,13 @@ from .config import read_flit_config
+ from .wheel import make_wheel_in, _write_wheel_file
+ from .sdist import SdistBuilder
+ 
++if 'PYNIXIFY' in os.environ:
++    try:
++        pynix_out = Path(os.environ['out'])
++    except KeyError:
++        print("out environment variable not defined")
++        sys.exit(1)
++
+ log = logging.getLogger(__name__)
+ 
+ # PEP 517 specifies that the CWD will always be the source tree
+@@ -32,9 +40,13 @@ def get_requires_for_build_wheel(config_settings=None):
+     docstring, version = get_docstring_and_version_via_ast(module)
+ 
+     if (want_summary and not docstring) or (want_version and not version):
+-        return info.metadata.get('requires_dist', [])
++        requires = info.metadata.get('requires_dist', [])
+     else:
+-        return []
++        requires = []
++    if 'PYNIXIFY' in os.environ:
++        with (pynix_out / "setup_requires.txt").open("w") as fp:
++            fp.write('\n'.join(requires))
++    return requires
+ 
+ # Requirements to build an sdist are the same as for a wheel
+ get_requires_for_build_sdist = get_requires_for_build_wheel
+diff --git a/flit_core/flit_core/config.py b/flit_core/flit_core/config.py
+index 1292956..1afbba6 100644
+--- a/flit_core/flit_core/config.py
++++ b/flit_core/flit_core/config.py
+@@ -4,6 +4,8 @@ import errno
+ import logging
+ import os
+ import os.path as osp
++import sys
++import json
+ from pathlib import Path
+ import re
+ 
+@@ -21,6 +23,13 @@ from .versionno import normalise_version
+ 
+ log = logging.getLogger(__name__)
+ 
++if 'PYNIXIFY' in os.environ:
++    try:
++        pynix_out = Path(os.environ['out'])
++    except KeyError:
++        print("out environment variable not defined")
++        sys.exit(1)
++
+ 
+ class ConfigError(ValueError):
+     pass
+@@ -175,6 +184,13 @@ def prep_toml_config(d, path):
+         loaded_cfg.data_directory = path.parent / data_dir
+         if not loaded_cfg.data_directory.is_dir():
+             raise ConfigError(f"{toml_key} must refer to a directory")
++    if 'PYNIXIFY' in os.environ:
++        metadata = {}
++        for attr in ("version", "url", "license", "description"):
++            metadata[attr] = loaded_cfg.metadata[attr]
++        metadata["_fmt"] = "pyproject"
++        with (pynix_out / 'meta.json').open('w') as fp:
++            json.dump(metadata, fp)
+ 
+     return loaded_cfg
+ 

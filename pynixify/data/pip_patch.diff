@@ -1,0 +1,72 @@
+diff --git a/pip-22.2.2-source/src/pip/_internal/operations/build/wheel.py b/pip-22.2.2-source/src/pip/_internal/operations/build/wheel.py
+index b0d2fc9ea..adee7f05e 100644
+--- a/pip-22.2.2-source/src/pip/_internal/operations/build/wheel.py
++++ b/pip-22.2.2-source/src/pip/_internal/operations/build/wheel.py
+@@ -24,12 +24,14 @@ def build_wheel_pep517(
+         logger.debug("Destination directory: %s", tempd)
+
+         runner = runner_with_spinner_message(
+-            f"Building wheel for {name} (pyproject.toml)"
++            f"Emmett is Building wheel for {name} (pyproject.toml)"
+         )
++        import pudb;pudb.set_trace()
+         with backend.subprocess_runner(runner):
+             wheel_name = backend.build_wheel(
+                 tempd,
+                 metadata_directory=metadata_directory,
++                # XXX shouldn't config_settings be here too?
+             )
+     except Exception:
+         logger.error("Failed building wheel for %s", name)
+diff --git a/pip-22.2.2-source/src/pip/_internal/req/req_install.py b/pip-22.2.2-source/src/pip/_internal/req/req_install.py
+index a1e376c89..c070976a1 100644
+--- a/pip-22.2.2-source/src/pip/_internal/req/req_install.py
++++ b/pip-22.2.2-source/src/pip/_internal/req/req_install.py
+@@ -480,6 +480,7 @@ class InstallRequirement:
+         requires, backend, check, backend_path = pyproject_toml_data
+         self.requirements_to_check = check
+         self.pyproject_requires = requires
++        assert False
+         self.pep517_backend = ConfiguredPep517HookCaller(
+             self,
+             self.unpacked_source_directory,
+diff --git a/pip-22.2.2-source/src/pip/_internal/wheel_builder.py b/pip-22.2.2-source/src/pip/_internal/wheel_builder.py
+index 77a17ff0f..73ab75f58 100644
+--- a/pip-22.2.2-source/src/pip/_internal/wheel_builder.py
++++ b/pip-22.2.2-source/src/pip/_internal/wheel_builder.py
+@@ -240,6 +240,7 @@ def _build_one_inside_env(
+ ) -> Optional[str]:
+     with TempDirectory(kind="wheel") as temp_dir:
+         assert req.name
++        assert False
+         if req.use_pep517:
+             assert req.metadata_directory
+             assert req.pep517_backend
+@@ -331,6 +332,7 @@ def build(
+     :return: The list of InstallRequirement that succeeded to build and
+         the list of InstallRequirement that failed to build.
+     """
++    assert False
+     if not requirements:
+         return [], []
+
+diff --git a/pip-22.2.2-source/src/pip/_vendor/pep517/wrappers.py b/pip-22.2.2-source/src/pip/_vendor/pep517/wrappers.py
+index e031ed708..72e1aaa03 100644
+--- a/pip-22.2.2-source/src/pip/_vendor/pep517/wrappers.py
++++ b/pip-22.2.2-source/src/pip/_vendor/pep517/wrappers.py
+@@ -205,6 +205,7 @@ class Pep517HookCaller(object):
+         """
+         if metadata_directory is not None:
+             metadata_directory = abspath(metadata_directory)
++        assert False
+         return self._call_hook('build_wheel', {
+             'wheel_directory': abspath(wheel_directory),
+             'config_settings': config_settings,
+@@ -299,6 +300,7 @@ class Pep517HookCaller(object):
+         # Python identifier, so non-ASCII content is wrong on Python 2 in
+         # any case).
+         # For backend_path, we use sys.getfilesystemencoding.
++        assert False
+         if sys.version_info[0] == 2:
+             build_backend = self.build_backend.encode('ASCII')
+         else:

@@ -1,12 +1,29 @@
+diff --git a/src/hatchling/build.py b/src/hatchling/build.py
+index d79c1e2e..02eb3fd9 100644
+--- a/src/hatchling/build.py
++++ b/src/hatchling/build.py
+@@ -37,6 +37,11 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+     """
+     from hatchling.builders.wheel import WheelBuilder
+
++    if "PYNIXIFY" in config_settings:
++        import os
++        os.environ["PYNIXIFY"] = config_settings["PYNIXIFY"]
++        os.environ["PYNIXIFY_OUT"] = config_settings["PYNIXIFY_OUT"]
++
+     builder = WheelBuilder(os.getcwd())
+     return os.path.basename(next(builder.build(wheel_directory, ['standard'])))
+
 diff --git a/src/hatchling/metadata/core.py b/src/hatchling/metadata/core.py
-index 24544ad1..f255bfec 100644
+index 24544ad1..a14c4d13 100644
 --- a/src/hatchling/metadata/core.py
 +++ b/src/hatchling/metadata/core.py
-@@ -11,6 +11,14 @@ if sys.version_info >= (3, 11):
+@@ -11,6 +11,15 @@ if sys.version_info >= (3, 11):
  else:
      import tomli as tomllib
 
 +if 'PYNIXIFY' in os.environ:
++    assert False
 +    from pathlib import Path
 +    try:
 +        pynix_out = Path(os.environ['out'])
@@ -17,7 +34,7 @@ index 24544ad1..f255bfec 100644
 
  def load_toml(path):
      with open(path, encoding='utf-8') as f:
-@@ -250,6 +258,9 @@ class BuildMetadata:
+@@ -250,6 +259,9 @@ class BuildMetadata:
                      raise ValueError(f'Dependency #{i} of field `build-system.requires` is invalid: {e}')
 
              self._requires_complex = requires_complex
@@ -27,7 +44,7 @@ index 24544ad1..f255bfec 100644
 
          return self._requires_complex
 
-@@ -1074,6 +1085,11 @@ class CoreMetadata:
+@@ -1074,6 +1086,11 @@ class CoreMetadata:
                      dependencies_complex[get_normalized_dependency(requirement)] = requirement
 
              self._dependencies_complex = dict(sorted(dependencies_complex.items()))
@@ -65,7 +82,7 @@ index 43a0fa67..2a971bba 100644
 
 +    if 'PYNIXIFY' in os.environ:
 +        with (pynix_out / 'meta.json').open('w') as fp:
-+            json.dump({"version": None, "url": None, "license": None, "description": None, "_fmt": "pyproject"}, fp)
++            json.dump({"version": None, "url": None, "license": None, "description": None}, fp)
 +
      return metadata_file
 

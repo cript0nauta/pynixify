@@ -4,15 +4,12 @@ let
   removeExt = fileName: builtins.elemAt (builtins.split "\\." fileName) 0;
 
   patchedSetuptools = pkgs.python3.pkgs.setuptools.overrideAttrs (ps: {
-    # src = (import <nixpkgs> {}).lib.cleanSource ./setuptools;
-
     patches = [ ./setuptools_patch.diff ];
     patchFlags = pkgs.lib.optionals
       (pkgs.lib.versionOlder "61" pkgs.python3.pkgs.setuptools.version) [
         "--merge"
         "-p1"
       ];
-
   });
 
   setuptoolsscm = pkgs.python3.pkgs.buildPythonPackage rec {
@@ -66,9 +63,39 @@ let
 
     pythonImportsCheck = [ "hatch_vcs" ];
   };
+  patchedflitcore = pkgs.python3.pkgs.flit-core.overrideAttrs
+    (ps: { patches = [ ./flitcore_patch.diff ]; });
+  flitscm = pkgs.python3.pkgs.buildPythonPackage rec {
+    pname = "flit-scm";
+    version = "1.7.0";
 
-  pythonWithPackages =
-    pkgs.python3.withPackages (ps: [ patchedSetuptools hatchling hatchvcs ]);
+    format = "pyproject";
+
+    src = pkgs.fetchFromGitLab {
+      owner = "WillDaSilva";
+      repo = "flit_scm";
+      rev = version;
+      sha256 = "sha256-K5sH+oHgX/ftvhkY+vIg6wUokAP96YxrTWds3tnEtyg=";
+      leaveDotGit = true;
+    };
+
+    nativeBuildInputs =
+      [ patchedflitcore setuptoolsscm pkgs.python3.pkgs.tomli pkgs.git ];
+    propagatedBuildInputs = [ patchedflitcore setuptoolsscm ]
+      ++ pkgs.lib.optionals (pkgs.python3.pkgs.pythonOlder "3.11")
+      [ pkgs.python3.pkgs.tomli ];
+  };
+  patchedpip = pkgs.python3.pkgs.pip.overrideAttrs
+    (ps: { patches = [ ./pip_patch_final.diff ]; });
+
+  pythonWithPackages = pkgs.python3.withPackages (ps: [
+    patchedSetuptools
+    setuptoolsscm
+    hatchling
+    hatchvcs
+    flitscm
+    patchedpip
+  ]);
 
   cleanSource = src:
     pkgs.lib.cleanSourceWith {
@@ -92,11 +119,8 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    if test -f pyproject.toml && grep "hatchling.build" pyproject.toml; then
-        echo 'mode = "local"' > config.toml
-        if PYNIXIFY=1 hatch --config config.toml --data-dir $out/data --cache-dir $out/cache build; then
-            exit 0
-        fi
+    if ${pythonWithPackages.pkgs.pip}/bin/pip --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation --prefix $out --install-option="--install-dir=$out" --root $out $PWD; then
+        exit 0
     fi
     # Indicate that fetching the result failed, but let the build succeed
     touch $out/failed
