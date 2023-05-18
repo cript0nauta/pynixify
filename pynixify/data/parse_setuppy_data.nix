@@ -94,7 +94,7 @@ let
   patchedbootstrappip = pkgs.python3.pkgs.bootstrapped-pip.overrideAttrs
     (ps: { patches = [ ./pip_patch.diff ]; });
   patchedpip = pkgs.python3.pkgs.pip.overrideAttrs (ps: {
-    nativeBuildInputs = [ patchedbootstrappip ];
+    #nativeBuildInputs = [ patchedbootstrappip ];
     patches = [ ./pip_patch_final.diff ];
   });
 
@@ -129,9 +129,7 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    if ${patchedpip} --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation --prefix $out --install-option="--install-dir=$out" --root $out $PWD; then
-        exit 0
-    fi
+    ${patchedpip}/bin/pip --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation --prefix $out --install-option="--install-dir=$out" --root $out $PWD
     # Indicate that fetching the result failed, but let the build succeed
     touch $out/failed
   '';

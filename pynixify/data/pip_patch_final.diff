@@ -1,96 +1,148 @@
 diff --git a/src/pip/_internal/commands/install.py b/src/pip/_internal/commands/install.py
-index 29907645c..851f58536 100644
+index 29907645c..67f29c65d 100644
 --- a/src/pip/_internal/commands/install.py
 +++ b/src/pip/_internal/commands/install.py
-@@ -413,6 +413,7 @@ class InstallCommand(RequirementCommand):
+@@ -413,12 +413,13 @@ class InstallCommand(RequirementCommand):
                  for r in requirement_set.requirements.values()
                  if should_build_for_install_command(r, check_binary_allowed)
              ]
-+            import pdb;pdb.set_trace()
- 
+-
++            if options.config_settings is not None:
++                raise Exception
              _, build_failures = build(
                  reqs_to_build,
+                 wheel_cache=wheel_cache,
+                 verify=True,
+-                build_options=[],
++                build_options=[options.config_settings],
+                 global_options=[],
+             )
+ 
+diff --git a/src/pip/_internal/operations/build/metadata.py b/src/pip/_internal/operations/build/metadata.py
+index e2b7b4445..cd144e024 100644
+--- a/src/pip/_internal/operations/build/metadata.py
++++ b/src/pip/_internal/operations/build/metadata.py
+@@ -15,7 +15,7 @@ from pip._internal.utils.temp_dir import TempDirectory
+ 
+ 
+ def generate_metadata(
+-    build_env: BuildEnvironment, backend: Pep517HookCaller, details: str
++        build_env: BuildEnvironment, backend: Pep517HookCaller, details: str, config_settings
+ ) -> str:
+     """Generate metadata using mechanisms described in PEP 517.
+ 
+@@ -32,7 +32,7 @@ def generate_metadata(
+         runner = runner_with_spinner_message("Preparing metadata (pyproject.toml)")
+         with backend.subprocess_runner(runner):
+             try:
+-                distinfo_dir = backend.prepare_metadata_for_build_wheel(metadata_dir)
++                distinfo_dir = backend.prepare_metadata_for_build_wheel(metadata_dir, config_settings)
+             except InstallationSubprocessError as error:
+                 raise MetadataGenerationFailed(package_details=details) from error
+ 
 diff --git a/src/pip/_internal/operations/build/wheel.py b/src/pip/_internal/operations/build/wheel.py
-index b0d2fc9ea..adee7f05e 100644
+index b0d2fc9ea..767966e66 100644
 --- a/src/pip/_internal/operations/build/wheel.py
 +++ b/src/pip/_internal/operations/build/wheel.py
-@@ -24,12 +24,14 @@ def build_wheel_pep517(
+@@ -14,6 +14,7 @@ def build_wheel_pep517(
+     backend: Pep517HookCaller,
+     metadata_directory: str,
+     tempd: str,
++    config_settings,
+ ) -> Optional[str]:
+     """Build one InstallRequirement using the PEP 517 build process.
+ 
+@@ -24,12 +25,13 @@ def build_wheel_pep517(
          logger.debug("Destination directory: %s", tempd)
  
          runner = runner_with_spinner_message(
 -            f"Building wheel for {name} (pyproject.toml)"
 +            f"Emmett is Building wheel for {name} (pyproject.toml)"
          )
-+        import pudb;pudb.set_trace()
          with backend.subprocess_runner(runner):
              wheel_name = backend.build_wheel(
                  tempd,
                  metadata_directory=metadata_directory,
-+                # XXX shouldn't config_settings be here too?
++                config_settings=config_settings,
              )
      except Exception:
          logger.error("Failed building wheel for %s", name)
 diff --git a/src/pip/_internal/req/req_install.py b/src/pip/_internal/req/req_install.py
-index a1e376c89..c070976a1 100644
+index a1e376c89..948b092ac 100644
 --- a/src/pip/_internal/req/req_install.py
 +++ b/src/pip/_internal/req/req_install.py
-@@ -480,6 +480,7 @@ class InstallRequirement:
-         requires, backend, check, backend_path = pyproject_toml_data
-         self.requirements_to_check = check
-         self.pyproject_requires = requires
-+        assert False
-         self.pep517_backend = ConfiguredPep517HookCaller(
-             self,
-             self.unpacked_source_directory,
+@@ -534,6 +534,7 @@ class InstallRequirement:
+                     build_env=self.build_env,
+                     backend=self.pep517_backend,
+                     details=details,
++                    config_settings=self.config_settings,
+                 )
+         else:
+             self.metadata_directory = generate_metadata_legacy(
 diff --git a/src/pip/_internal/wheel_builder.py b/src/pip/_internal/wheel_builder.py
-index 77a17ff0f..f628462b3 100644
+index 77a17ff0f..72e93a580 100644
 --- a/src/pip/_internal/wheel_builder.py
 +++ b/src/pip/_internal/wheel_builder.py
-@@ -240,6 +240,7 @@ def _build_one_inside_env(
- ) -> Optional[str]:
-     with TempDirectory(kind="wheel") as temp_dir:
-         assert req.name
-+        assert False
-         if req.use_pep517:
-             assert req.metadata_directory
-             assert req.pep517_backend
-@@ -331,6 +332,7 @@ def build(
+@@ -264,6 +264,7 @@ def _build_one_inside_env(
+                     backend=req.pep517_backend,
+                     metadata_directory=req.metadata_directory,
+                     tempd=temp_dir.path,
++                    config_settings=req.config_settings,
+                 )
+         else:
+             wheel_path = build_wheel_legacy(
+@@ -331,6 +332,9 @@ def build(
      :return: The list of InstallRequirement that succeeded to build and
          the list of InstallRequirement that failed to build.
      """
-+    raise Exception
++    if build_options and build_options[0] is not None:
++        print(build_options)
++        raise Exception
      if not requirements:
          return [], []
  
 diff --git a/src/pip/_vendor/pep517/in_process/_in_process.py b/src/pip/_vendor/pep517/in_process/_in_process.py
-index 954a4ab05..851d6f460 100644
+index 954a4ab05..c49ced4e0 100644
 --- a/src/pip/_vendor/pep517/in_process/_in_process.py
 +++ b/src/pip/_vendor/pep517/in_process/_in_process.py
-@@ -151,6 +151,7 @@ def prepare_metadata_for_build_wheel(
+@@ -151,6 +151,8 @@ def prepare_metadata_for_build_wheel(
      Implements a fallback by building a wheel if the hook isn't defined,
      unless _allow_fallback is False in which case HookMissing is raised.
      """
-+    assert False
++    if config_settings is not None:
++        raise Exception
      backend = _build_backend()
      try:
          hook = backend.prepare_metadata_for_build_wheel
+@@ -253,6 +255,8 @@ def build_wheel(wheel_directory, config_settings, metadata_directory=None):
+     prepare_metadata_for_build_wheel fallback, this
+     will copy it rather than rebuilding the wheel.
+     """
++    if config_settings is not None:
++        raise Exception
+     prebuilt_whl = _find_already_built_wheel(metadata_directory)
+     if prebuilt_whl:
+         shutil.copy2(prebuilt_whl, wheel_directory)
 diff --git a/src/pip/_vendor/pep517/wrappers.py b/src/pip/_vendor/pep517/wrappers.py
-index e031ed708..72e1aaa03 100644
+index e031ed708..83862d2ed 100644
 --- a/src/pip/_vendor/pep517/wrappers.py
 +++ b/src/pip/_vendor/pep517/wrappers.py
-@@ -205,6 +205,7 @@ class Pep517HookCaller(object):
+@@ -185,6 +185,9 @@ class Pep517HookCaller(object):
+         and the dist-info extracted from that (unless _allow_fallback is
+         False).
+         """
++        if config_settings is not None:
++            print(config_settings)
++            raise Exception
+         return self._call_hook('prepare_metadata_for_build_wheel', {
+             'metadata_directory': abspath(metadata_directory),
+             'config_settings': config_settings,
+@@ -205,6 +208,8 @@ class Pep517HookCaller(object):
          """
          if metadata_directory is not None:
              metadata_directory = abspath(metadata_directory)
-+        assert False
++        if config_settings is not None:
++            raise Exception
          return self._call_hook('build_wheel', {
              'wheel_directory': abspath(wheel_directory),
              'config_settings': config_settings,
-@@ -299,6 +300,7 @@ class Pep517HookCaller(object):
-         # Python identifier, so non-ASCII content is wrong on Python 2 in
-         # any case).
-         # For backend_path, we use sys.getfilesystemencoding.
-+        assert False
-         if sys.version_info[0] == 2:
-             build_backend = self.build_backend.encode('ASCII')
-         else:
