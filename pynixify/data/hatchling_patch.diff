@@ -1,5 +1,5 @@
 diff --git a/src/hatchling/build.py b/src/hatchling/build.py
-index d79c1e2e..1a616e4a 100644
+index d79c1e2e..29d31be8 100644
 --- a/src/hatchling/build.py
 +++ b/src/hatchling/build.py
 @@ -1,6 +1,17 @@
@@ -11,7 +11,7 @@ index d79c1e2e..1a616e4a 100644
 +        from pathlib import Path
 +        pynix_out = Path(config_settings['PYNIXIFY_OUT'])
 +        for target in ("tests", "setup", "install"):
-+            fp = (pynix_out / "%s_requires.txt" % target).open("w")
++            fp = (pynix_out / ("%s_requires.txt" % target)).open("w")
 +            fp.write('\n'.join([str(req) for req in deps]))
 +            fp.write('\n#\n')
 +            fp.close()
