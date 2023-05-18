@@ -1,13 +1,12 @@
 diff --git a/src/hatchling/build.py b/src/hatchling/build.py
-index d79c1e2e..6b5ff25e 100644
+index d79c1e2e..c88ba500 100644
 --- a/src/hatchling/build.py
 +++ b/src/hatchling/build.py
-@@ -37,6 +37,11 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+@@ -37,6 +37,10 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
      """
      from hatchling.builders.wheel import WheelBuilder
 
 +    if config_settings is not None and "PYNIXIFY" in config_settings:
-+        import os
 +        os.environ["PYNIXIFY"] = config_settings["PYNIXIFY"]
 +        os.environ["PYNIXIFY_OUT"] = config_settings["PYNIXIFY_OUT"]
 +

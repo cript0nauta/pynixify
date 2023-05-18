@@ -1,10 +1,22 @@
+diff --git a/src/pip/_internal/commands/install.py b/src/pip/_internal/commands/install.py
+index 29907645c..851f58536 100644
+--- a/src/pip/_internal/commands/install.py
++++ b/src/pip/_internal/commands/install.py
+@@ -413,6 +413,7 @@ class InstallCommand(RequirementCommand):
+                 for r in requirement_set.requirements.values()
+                 if should_build_for_install_command(r, check_binary_allowed)
+             ]
++            import pdb;pdb.set_trace()
+ 
+             _, build_failures = build(
+                 reqs_to_build,
 diff --git a/src/pip/_internal/operations/build/wheel.py b/src/pip/_internal/operations/build/wheel.py
 index b0d2fc9ea..adee7f05e 100644
 --- a/src/pip/_internal/operations/build/wheel.py
 +++ b/src/pip/_internal/operations/build/wheel.py
 @@ -24,12 +24,14 @@ def build_wheel_pep517(
          logger.debug("Destination directory: %s", tempd)
-
+ 
          runner = runner_with_spinner_message(
 -            f"Building wheel for {name} (pyproject.toml)"
 +            f"Emmett is Building wheel for {name} (pyproject.toml)"
@@ -31,7 +43,7 @@ index a1e376c89..c070976a1 100644
              self,
              self.unpacked_source_directory,
 diff --git a/src/pip/_internal/wheel_builder.py b/src/pip/_internal/wheel_builder.py
-index 77a17ff0f..73ab75f58 100644
+index 77a17ff0f..f628462b3 100644
 --- a/src/pip/_internal/wheel_builder.py
 +++ b/src/pip/_internal/wheel_builder.py
 @@ -240,6 +240,7 @@ def _build_one_inside_env(
@@ -46,10 +58,10 @@ index 77a17ff0f..73ab75f58 100644
      :return: The list of InstallRequirement that succeeded to build and
          the list of InstallRequirement that failed to build.
      """
-+    assert False
++    raise Exception
      if not requirements:
          return [], []
-
+ 
 diff --git a/src/pip/_vendor/pep517/in_process/_in_process.py b/src/pip/_vendor/pep517/in_process/_in_process.py
 index 954a4ab05..851d6f460 100644
 --- a/src/pip/_vendor/pep517/in_process/_in_process.py
