@@ -129,7 +129,7 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    ${patchedpip}/bin/pip --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation --prefix $out --install-option="--install-dir=$out" --root $out $PWD
+    ${patchedpip}/bin/pip --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation $PWD
     # Indicate that fetching the result failed, but let the build succeed
     touch $out/failed
   '';
