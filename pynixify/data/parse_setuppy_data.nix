@@ -91,12 +91,8 @@ let
       ++ pkgs.lib.optionals (pkgs.python3.pkgs.pythonOlder "3.11")
       [ pkgs.python3.pkgs.tomli ];
   };
-  patchedbootstrappip = pkgs.python3.pkgs.bootstrapped-pip.overrideAttrs
-    (ps: { patches = [ ./pip_patch.diff ]; });
-  patchedpip = pkgs.python3.pkgs.pip.overrideAttrs (ps: {
-    #nativeBuildInputs = [ patchedbootstrappip ];
-    patches = [ ./pip_patch_final.diff ];
-  });
+  patchedpip = pkgs.python3.pkgs.pip.overrideAttrs
+    (ps: { patches = [ ./pip_patch_final.diff ]; });
 
   pythonWithPackages = pkgs.python3.withPackages (ps: [
     patchedSetuptools
@@ -129,7 +125,10 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    ${patchedpip}/bin/pip --no-cache-dir install --config-settings PYNIXIFY_OUT=$out --config-settings PYNIXIFY=1 --no-build-isolation $PWD
+    #${patchedpip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD
+    if ${patchedpip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
+        exit 0
+    fi
     # Indicate that fetching the result failed, but let the build succeed
     touch $out/failed
   '';
