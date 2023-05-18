@@ -1,4 +1,10 @@
-{ file, pkgs ? import <nixpkgs> { } }:
+{ file, pkgs ? import (builtins.fetchGit {
+  name = "nixos-22.11";
+  url = "https://github.com/nixos/nixpkgs/";
+  # `git ls-remote https://github.com/nixos/nixpkgs nixos-unstable`
+  ref = "refs/heads/nixos-22.11";
+  rev = "6c591e7adc514090a77209f56c9d0c551ab8530d";
+}) { } }:
 
 let
   removeExt = fileName: builtins.elemAt (builtins.split "\\." fileName) 0;
