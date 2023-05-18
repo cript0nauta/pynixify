@@ -50,6 +50,18 @@ index 77a17ff0f..73ab75f58 100644
      if not requirements:
          return [], []
 
+diff --git a/src/pip/_vendor/pep517/in_process/_in_process.py b/src/pip/_vendor/pep517/in_process/_in_process.py
+index 954a4ab05..851d6f460 100644
+--- a/src/pip/_vendor/pep517/in_process/_in_process.py
++++ b/src/pip/_vendor/pep517/in_process/_in_process.py
+@@ -151,6 +151,7 @@ def prepare_metadata_for_build_wheel(
+     Implements a fallback by building a wheel if the hook isn't defined,
+     unless _allow_fallback is False in which case HookMissing is raised.
+     """
++    assert False
+     backend = _build_backend()
+     try:
+         hook = backend.prepare_metadata_for_build_wheel
 diff --git a/src/pip/_vendor/pep517/wrappers.py b/src/pip/_vendor/pep517/wrappers.py
 index e031ed708..72e1aaa03 100644
 --- a/src/pip/_vendor/pep517/wrappers.py
