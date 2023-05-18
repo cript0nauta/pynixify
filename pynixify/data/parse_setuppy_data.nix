@@ -91,17 +91,107 @@ let
       ++ pkgs.lib.optionals (pkgs.python3.pkgs.pythonOlder "3.11")
       [ pkgs.python3.pkgs.tomli ];
   };
-  patchedpip = pkgs.python3.pkgs.pip.overrideAttrs
-    (ps: { patches = [ ./pip_patch_final.diff ]; });
+  patchedbootstrappip = pkgs.stdenv.mkDerivation rec {
+    pname = "pip";
+    inherit (pip) version;
+    name = "${pkgs.python3.libPrefix}-bootstrapped-${pname}-${version}";
 
-  pythonWithPackages = pkgs.python3.withPackages (ps: [
-    patchedSetuptools
-    setuptoolsscm
-    hatchling
-    hatchvcs
-    flitscm
-    patchedpip
-  ]);
+    srcs = [ pkgs.python3.pkgs.wheel.src pip.src patchedSetuptools.src ];
+    sourceRoot = ".";
+    patches = [ ./pip_patch.diff ];
+
+    dontUseSetuptoolsBuild = true;
+    dontUsePipInstall = true;
+
+    # Should be propagatedNativeBuildInputs
+    propagatedBuildInputs = [
+      # Override to remove dependencies to prevent infinite recursion.
+      (pkgs.python3.pkgs.pipInstallHook.override { pip = null; })
+      (pkgs.python3.pkgs.setuptoolsBuildHook.override {
+        setuptools = null;
+        wheel = null;
+      })
+    ];
+
+    postPatch = ''
+      mkdir -p $out/bin
+    '' + pip.postPatch;
+
+    nativeBuildInputs = [ pkgs.makeWrapper pkgs.unzip ];
+    buildInputs = [ pkgs.python3 ];
+
+    dontBuild = true;
+
+    installPhase =
+      pkgs.lib.optionalString (!pkgs.stdenv.hostPlatform.isWindows) ''
+        export SETUPTOOLS_INSTALL_WINDOWS_SPECIFIC_FILES=0
+      '' + ''
+        # Give folders a known name
+        mv pip* pip
+        grep -R Emmett pip
+        exit 1
+        mv setuptools* setuptools
+        mv wheel* wheel
+        # Set up PYTHONPATH. The above folders need to be on PYTHONPATH
+        # $out is where we are installing to and takes precedence
+        export PYTHONPATH="$out/${pkgs.python3.sitePackages}:$(pwd)/pip/src:$(pwd)/setuptools:$(pwd)/setuptools/pkg_resources:$(pwd)/wheel:$PYTHONPATH"
+
+        echo "Building setuptools wheel..."
+        pushd setuptools
+        rm pyproject.toml
+        ${pkgs.python3.pythonForBuild.interpreter} -m pip install --no-build-isolation --no-index --prefix=$out  --ignore-installed --no-dependencies --no-cache .
+        popd
+
+        echo "Building wheel wheel..."
+        pushd wheel
+        ${pkgs.python3.pythonForBuild.interpreter} -m pip install --no-build-isolation --no-index --prefix=$out  --ignore-installed --no-dependencies --no-cache .
+        popd
+
+        echo "Building pip wheel..."
+        pushd pip
+        ${pkgs.python3.pythonForBuild.interpreter} -m pip install --no-build-isolation --no-index --prefix=$out  --ignore-installed --no-dependencies --no-cache .
+        popd
+      '';
+  };
+  pip = pkgs.python3.pkgs.buildPythonPackage rec {
+    pname = "pip";
+    version = "22.2.2";
+    format = "other";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "pypa";
+      repo = pname;
+      rev = version;
+      sha256 = "sha256-SLjmxFUFmvgy8E8kxfc6lxxCRo+GN4L77pqkWkRR8aE=";
+      name = "${pname}-${version}-source";
+    };
+
+    nativeBuildInputs = [ patchedbootstrappip ];
+
+    postPatch = ''
+      # Remove vendored Windows PE binaries
+      # Note: These are unused but make the package unreproducible.
+      find -type f -name '*.exe' -delete
+    '';
+
+    # pip detects that we already have bootstrapped_pip "installed", so we need
+    # to force it a little.
+    pipInstallFlags = [ "--ignore-installed" ];
+
+    checkInputs = [
+      pkgs.python3.pkgs.mock
+      pkgs.python3.pkgs.scripttest
+      pkgs.python3.pkgs.virtualenv
+      pkgs.python3.pkgs.pretend
+      pkgs.python3.pkgs.pytest
+    ];
+    # Pip wants pytest, but tests are not distributed
+    doCheck = false;
+    patches = [ ./pip_patch_final.diff ];
+  };
+
+  pythonWithPackages = pkgs.python3.withPackages
+    (ps: [ patchedSetuptools setuptoolsscm hatchling hatchvcs flitscm pip ]);
 
   cleanSource = src:
     pkgs.lib.cleanSourceWith {
