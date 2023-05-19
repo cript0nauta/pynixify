@@ -17,7 +17,6 @@ jobs:
         run: pip install black isort
 
       - name: Lint Python Code
-        uses: actions/github-script@v6.4.1
         run: |
           black --check pynixify
           isort --check pynixify
