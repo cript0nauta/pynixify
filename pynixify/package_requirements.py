@@ -14,13 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List
-from dataclasses import dataclass
+
 from packaging.requirements import Requirement
 from pkg_resources import parse_requirements
-from pynixify.nixpkgs_sources import run_nix_build
+
 from pynixify.exceptions import NixBuildError
+from pynixify.nixpkgs_sources import run_nix_build
 
 
 @dataclass
@@ -32,12 +34,12 @@ class PackageRequirements:
     @classmethod
     def from_result_path(cls, result_path: Path):
         attr_mapping = {
-            'build_requirements': Path('setup_requires.txt'),
-            'test_requirements': Path('tests_requires.txt'),
-            'runtime_requirements': Path('install_requires.txt'),
+            "build_requirements": Path("setup_requires.txt"),
+            "test_requirements": Path("tests_requires.txt"),
+            "runtime_requirements": Path("install_requires.txt"),
         }
         kwargs = {}
-        for (attr, filename) in attr_mapping.items():
+        for attr, filename in attr_mapping.items():
             with (result_path / filename).open() as fp:
                 # Convert from Requirement.parse to Requirement
                 reqs = [Requirement(str(r)) for r in parse_requirements(fp)]
@@ -47,27 +49,27 @@ class PackageRequirements:
 
 async def eval_path_requirements(path: Path) -> PackageRequirements:
     nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
-    if path.name.endswith('.whl'):
+    if path.name.endswith(".whl"):
         # Some nixpkgs packages use a wheel as source, which don't have a
         # setup.py file. For now, ignore them assume they have no dependencies
-        print(f'{path} is a wheel file instead of a source distribution. '
-              f'Assuming it has no dependencies.')
+        print(
+            f"{path} is a wheel file instead of a source distribution. "
+            f"Assuming it has no dependencies."
+        )
         return PackageRequirements(
-            build_requirements=[],
-            test_requirements=[],
-            runtime_requirements=[]
+            build_requirements=[], test_requirements=[], runtime_requirements=[]
         )
     assert nix_expression_path.exists()
     nix_store_path = await run_nix_build(
         str(nix_expression_path),
-        '--no-out-link',
-        '--no-build-output',
-        '--arg',
-        'file',
-        str(path.resolve())
+        "--no-out-link",
+        "--no-build-output",
+        "--arg",
+        "file",
+        str(path.resolve()),
     )
-    if (nix_store_path / 'failed').exists():
-        print(f'Error parsing requirements of {path}. Assuming it has no dependencies.')
+    if (nix_store_path / "failed").exists():
+        print(f"Error parsing requirements of {path}. Assuming it has no dependencies.")
         return PackageRequirements(
             build_requirements=[],
             test_requirements=[],

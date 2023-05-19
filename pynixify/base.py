@@ -15,16 +15,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import json
-from pathlib import Path
 from dataclasses import dataclass
-from typing import Optional, Dict
-from packaging.version import Version, LegacyVersion, parse as parse_original
+from pathlib import Path
+from typing import Dict, Optional
+
+from packaging.version import LegacyVersion, Version
+from packaging.version import parse as parse_original
+
 
 @dataclass
 class PackageMetadata:
     description: Optional[str]
     license: Optional[str]
     url: Optional[str]
+
 
 @dataclass
 class Package:
@@ -38,9 +42,10 @@ class Package:
         raise NotImplementedError()
 
     async def metadata(self) -> PackageMetadata:
-        from pynixify.package_requirements import run_nix_build, NixBuildError
+        from pynixify.package_requirements import NixBuildError, run_nix_build
+
         source = await self.source()
-        if source.name.endswith('.whl'):
+        if source.name.endswith(".whl"):
             # Some nixpkgs packages use a wheel as source, which don't have a
             # setup.py file. For now, ignore them assume they have no metadata
             return PackageMetadata(
@@ -52,23 +57,23 @@ class Package:
         assert nix_expression_path.exists()
         nix_store_path = await run_nix_build(
             str(nix_expression_path),
-            '--no-out-link',
-            '--no-build-output',
-            '--arg',
-            'file',
-            str(source.resolve())
+            "--no-out-link",
+            "--no-build-output",
+            "--arg",
+            "file",
+            str(source.resolve()),
         )
-        if (nix_store_path / 'failed').exists():
-            print(f'Error parsing metadata of {source}. Assuming it has no metadata.')
+        if (nix_store_path / "failed").exists():
+            print(f"Error parsing metadata of {source}. Assuming it has no metadata.")
             return PackageMetadata(
                 url=None,
                 description=None,
                 license=None,
             )
-        with (nix_store_path / 'meta.json').open() as fp:
+        with (nix_store_path / "meta.json").open() as fp:
             metadata = json.load(fp)
             try:
-                version: Optional[str] = metadata.pop('version')
+                version: Optional[str] = metadata.pop("version")
             except KeyError:
                 pass
             else:
@@ -77,6 +82,7 @@ class Package:
                     # will update it to its real value
                     self.version = Version(version)
             return PackageMetadata(**metadata)
+
 
 # mypy hack
 def parse_version(version: str) -> Version:

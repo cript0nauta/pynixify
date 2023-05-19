@@ -14,14 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 class PackageNotFound(Exception):
     pass
+
 
 class NoMatchingVersionFound(Exception):
     pass
 
+
 class IntegrityError(Exception):
     pass
+
 
 class NixBuildError(Exception):
     pass

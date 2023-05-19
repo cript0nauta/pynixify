@@ -16,14 +16,13 @@
 
 import asyncio
 from pathlib import Path
-from typing import Iterable, Mapping, List, Set, Optional, Tuple
+from typing import Iterable, List, Mapping, Optional, Set, Tuple
+
 from mako.template import Template
-from pynixify.version_chooser import (
-    VersionChooser,
-    ChosenPackageRequirements,
-)
-from pynixify.base import PackageMetadata, Package
+
+from pynixify.base import Package, PackageMetadata
 from pynixify.pypi_api import PyPIPackage
+from pynixify.version_chooser import ChosenPackageRequirements, VersionChooser
 
 DISCLAIMER = """
 # WARNING: This file was automatically generated. You should avoid editing it.
@@ -32,7 +31,8 @@ DISCLAIMER = """
 
 """
 
-expression_template = Template("""${DISCLAIMER}
+expression_template = Template(
+    """${DISCLAIMER}
     { ${', '.join(args)} }:
 
     buildPythonPackage rec {
@@ -88,9 +88,11 @@ expression_template = Template("""${DISCLAIMER}
             % endif
         };
     }
-""")
+"""
+)
 
-overlayed_nixpkgs_template = Template("""${DISCLAIMER}
+overlayed_nixpkgs_template = Template(
+    """${DISCLAIMER}
     { overlays ? [ ], ... }@args:
     let
         pynixifyOverlay = self: super: {
@@ -120,9 +122,11 @@ overlayed_nixpkgs_template = Template("""${DISCLAIMER}
         };
 
     in import nixpkgs (args // { overlays = [ pynixifyOverlay ] ++ overlays; })
-""")
+"""
+)
 
-shell_nix_template = Template("""${DISCLAIMER}
+shell_nix_template = Template(
+    """${DISCLAIMER}
     { python ? "python3" }:
     let
         pkgs = import ./nixpkgs.nix {};
@@ -138,34 +142,42 @@ shell_nix_template = Template("""${DISCLAIMER}
             ]))
         ];
     }
-""")
+"""
+)
+
 
 def build_nix_expression(
-        package: PyPIPackage,
-        requirements: ChosenPackageRequirements,
-        metadata: PackageMetadata,
-        sha256: str,
-        fetchPypi: Optional[Tuple[str, str]] = None,
-    ) -> str:
-    non_python_dependencies = ['lib', 'fetchPypi', 'buildPythonPackage']
+    package: PyPIPackage,
+    requirements: ChosenPackageRequirements,
+    metadata: PackageMetadata,
+    sha256: str,
+    fetchPypi: Optional[Tuple[str, str]] = None,
+) -> str:
+    non_python_dependencies = ["lib", "fetchPypi", "buildPythonPackage"]
     runtime_requirements: List[str] = [
-            p.attr for p in requirements.runtime_requirements]
-    build_requirements: List[str] = [
-            p.attr for p in requirements.build_requirements]
-    test_requirements: List[str] = [
-            p.attr for p in requirements.test_requirements]
+        p.attr for p in requirements.runtime_requirements
+    ]
+    build_requirements: List[str] = [p.attr for p in requirements.build_requirements]
+    test_requirements: List[str] = [p.attr for p in requirements.test_requirements]
 
     args: List[str]
-    args = sorted(set(
-        non_python_dependencies + runtime_requirements +
-        test_requirements + build_requirements))
+    args = sorted(
+        set(
+            non_python_dependencies
+            + runtime_requirements
+            + test_requirements
+            + build_requirements
+        )
+    )
 
     version = str(package.version)
     nix = escape_string
     return expression_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
+
 def build_overlay_expr(overlays: Mapping[str, Path]):
-    return Template("""
+    return Template(
+        """
     self: super: {
             % for (package_name, path) in overlays.items():
                 ${package_name} =
@@ -173,32 +185,30 @@ def build_overlay_expr(overlays: Mapping[str, Path]):
                         ${'' if path.is_absolute() else './'}${str(path).replace('/default.nix', '')} {};
 
             % endfor
-    }""").render(overlays=overlays)
+    }"""
+    ).render(overlays=overlays)
+
 
 def build_overlayed_nixpkgs(
-        overlays: Mapping[str, Path],
-        nixpkgs: Optional[Tuple[str, str]] = None
-        ) -> str:
+    overlays: Mapping[str, Path], nixpkgs: Optional[Tuple[str, str]] = None
+) -> str:
     nix = escape_string
 
     # Sort dictionary keys to ensure pynixify/nixpkgs.nix will have the
     # same contents in different pynixify runs.
-    overlays = {
-        k: overlays[k]
-        for k in sorted(overlays.keys())
-    }
+    overlays = {k: overlays[k] for k in sorted(overlays.keys())}
 
     # Taken from Interpreters section in https://nixos.org/nixpkgs/manual/#reference
     interpreters = [
-        'python2',
-        'python27',
-        'python3',
-        'python35',
-        'python36',
-        'python37',
-        'python38',
-        'python39',
-        'python310'
+        "python2",
+        "python27",
+        "python3",
+        "python35",
+        "python36",
+        "python37",
+        "python38",
+        "python39",
+        "python310",
     ]
 
     return overlayed_nixpkgs_template.render(DISCLAIMER=DISCLAIMER, **locals())
@@ -210,7 +220,7 @@ def build_shell_nix_expression(packages: List[Package]) -> str:
 
 async def nixfmt(expr: str) -> str:
     proc = await asyncio.create_subprocess_exec(
-        'nixfmt',
+        "nixfmt",
         stdout=asyncio.subprocess.PIPE,
         stdin=asyncio.subprocess.PIPE,
     )
@@ -219,15 +229,16 @@ async def nixfmt(expr: str) -> str:
     (stdout, _) = await proc.communicate()
     status = await proc.wait()
     if status:
-        raise TypeError(f'nixfmt failed')
+        raise TypeError(f"nixfmt failed")
     return stdout.decode()
+
 
 def escape_string(string: str) -> str:
     # Based on the documentation in https://nixos.org/nix/manual/#idm140737322106128
-    string = string.replace('\\', '\\\\')
+    string = string.replace("\\", "\\\\")
     string = string.replace('"', '\\"')
-    string = string.replace('\n', '\\n')
-    string = string.replace('\t', '\\t')
-    string = string.replace('\r', '\\r')
-    string = string.replace('${', '\\${')
+    string = string.replace("\n", "\\n")
+    string = string.replace("\t", "\\t")
+    string = string.replace("\r", "\\r")
+    string = string.replace("${", "\\${")
     return f'"{string}"'

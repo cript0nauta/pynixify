@@ -16,29 +16,30 @@
 
 import asyncio
 import operator
-from pathlib import Path
 from dataclasses import dataclass
-from typing import Any, Dict, Callable, Awaitable, Optional, List, Tuple
+from pathlib import Path
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+
 from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
 from packaging.specifiers import SpecifierSet
+from packaging.utils import canonicalize_name
+
 from pynixify.base import Package, parse_version
-from pynixify.nixpkgs_sources import NixpkgsData, NixPackage
+from pynixify.exceptions import NoMatchingVersionFound, PackageNotFound
+from pynixify.nixpkgs_sources import NixPackage, NixpkgsData
+from pynixify.package_requirements import (PackageRequirements,
+                                           eval_path_requirements)
 from pynixify.pypi_api import PyPIData, PyPIPackage
-from pynixify.package_requirements import (
-    PackageRequirements,
-    eval_path_requirements,
-)
-from pynixify.exceptions import (
-    NoMatchingVersionFound,
-    PackageNotFound,
-)
+
 
 class VersionChooser:
-    def __init__(self, nixpkgs_data: NixpkgsData, pypi_data: PyPIData,
-                 req_evaluate: Callable[[Package], Awaitable[PackageRequirements]],
-                 should_load_tests: Callable[[str], bool] = lambda _: False,
-                 ):
+    def __init__(
+        self,
+        nixpkgs_data: NixpkgsData,
+        pypi_data: PyPIData,
+        req_evaluate: Callable[[Package], Awaitable[PackageRequirements]],
+        should_load_tests: Callable[[str], bool] = lambda _: False,
+    ):
         self.nixpkgs_data = nixpkgs_data
         self.pypi_data = pypi_data
         self._choosed_packages: Dict[str, Tuple[Package, SpecifierSet]] = {}
@@ -46,7 +47,7 @@ class VersionChooser:
         self.evaluate_requirements = req_evaluate
         self.should_load_tests = should_load_tests
 
-    async def require(self, r: Requirement, coming_from: Optional[Package]=None):
+    async def require(self, r: Requirement, coming_from: Optional[Package] = None):
         pkg: Package
 
         if r.marker and not r.marker.evaluate():
@@ -58,16 +59,20 @@ class VersionChooser:
             is_in_nixpkgs = False
         else:
             is_in_nixpkgs = True
-        if (isinstance(coming_from, NixPackage) and
-                is_in_nixpkgs and
-                not self.nixpkgs_data.from_requirement(r)):
+        if (
+            isinstance(coming_from, NixPackage)
+            and is_in_nixpkgs
+            and not self.nixpkgs_data.from_requirement(r)
+        ):
             # This shouldn't happen in an ideal world. Unfortunately,
             # nixpkgs does some patching to packages to disable some
             # requirements. Because we don't use these patches, the
             # dependency resolution would fail if we don't ignore the
             # requirement.
-            print(f"warning: ignoring requirement {r} from {coming_from} "
-                  f"because there is no matching version in nixpkgs packages")
+            print(
+                f"warning: ignoring requirement {r} from {coming_from} "
+                f"because there is no matching version in nixpkgs packages"
+            )
             return
 
         print(f'Resolving {r}{f" (from {coming_from})" if coming_from else ""}')
@@ -81,9 +86,9 @@ class VersionChooser:
             self._choosed_packages[canonicalize_name(r.name)] = (pkg, specifier)
             if pkg.version not in specifier:
                 raise NoMatchingVersionFound(
-                    f'New requirement '
+                    f"New requirement "
                     f'{r}{f" (from {coming_from})" if coming_from else ""} '
-                    f'does not match already installed {r.name}=={str(pkg.version)}'
+                    f"does not match already installed {r.name}=={str(pkg.version)}"
                 )
             return
 
@@ -112,32 +117,38 @@ class VersionChooser:
                     found_pypi = False
 
             if not found_nixpkgs and not found_pypi:
-                raise PackageNotFound(f'{r.name} not found in PyPI nor nixpkgs')
+                raise PackageNotFound(f"{r.name} not found in PyPI nor nixpkgs")
 
             if not pkgs:
                 raise NoMatchingVersionFound(str(r))
 
-            pkg = max(pkgs, key=operator.attrgetter('version'))
+            pkg = max(pkgs, key=operator.attrgetter("version"))
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
         reqs: PackageRequirements = await self.evaluate_requirements(pkg)
 
         if isinstance(pkg, NixPackage) or (
-                not self.should_load_tests(canonicalize_name(r.name))):
+            not self.should_load_tests(canonicalize_name(r.name))
+        ):
             reqs.test_requirements = []
 
-        await asyncio.gather(*(
-            self.require(req, coming_from=pkg)
-            for req in (reqs.runtime_requirements + reqs.test_requirements +
-                        reqs.build_requirements)
-        ))
+        await asyncio.gather(
+            *(
+                self.require(req, coming_from=pkg)
+                for req in (
+                    reqs.runtime_requirements
+                    + reqs.test_requirements
+                    + reqs.build_requirements
+                )
+            )
+        )
 
     async def require_local(self, pypi_name: str, src: Path):
         assert pypi_name not in self._choosed_packages
         package = PyPIPackage(
             pypi_name=pypi_name,
-            download_url='',
-            sha256='',
-            version=parse_version('0.1dev'),
+            download_url="",
+            sha256="",
+            version=parse_version("0.1dev"),
             pypi_cache=self.pypi_data.pypi_cache,
             local_source=src,
         )
@@ -153,13 +164,15 @@ class VersionChooser:
 
     def all_pypi_packages(self) -> List[PyPIPackage]:
         return [
-            v[0] for v in self._choosed_packages.values()
+            v[0]
+            for v in self._choosed_packages.values()
             if isinstance(v[0], PyPIPackage)
         ]
 
 
 async def evaluate_package_requirements(
-        pkg: Package, extra_args=[]) -> PackageRequirements:
+    pkg: Package, extra_args=[]
+) -> PackageRequirements:
     src = await pkg.source(extra_args)
     return await eval_path_requirements(src)
 
@@ -172,22 +185,23 @@ class ChosenPackageRequirements:
 
     @classmethod
     def from_package_requirements(
-            cls,
-            package_requirements: PackageRequirements,
-            version_chooser: VersionChooser,
-            load_tests: bool):
+        cls,
+        package_requirements: PackageRequirements,
+        version_chooser: VersionChooser,
+        load_tests: bool,
+    ):
         kwargs: Any = {}
 
-        kwargs['build_requirements'] = []
+        kwargs["build_requirements"] = []
         for req in package_requirements.build_requirements:
             if req.marker and not req.marker.evaluate():
                 continue
             package = version_chooser.package_for(req.name)
             if package is None:
                 raise PackageNotFound(
-                    f'Package {req.name} not found in the version chooser'
+                    f"Package {req.name} not found in the version chooser"
                 )
-            kwargs['build_requirements'].append(package)
+            kwargs["build_requirements"].append(package)
 
         # tests_requirements uses the packages in the version chooser
         packages: List[Package] = []
@@ -198,10 +212,10 @@ class ChosenPackageRequirements:
                 package = version_chooser.package_for(req.name)
                 if package is None:
                     raise PackageNotFound(
-                        f'Package {req.name} not found in the version chooser'
+                        f"Package {req.name} not found in the version chooser"
                     )
                 packages.append(package)
-        kwargs['test_requirements'] = packages
+        kwargs["test_requirements"] = packages
 
         # runtime_requirements uses the packages in the version chooser
         packages = []
@@ -211,9 +225,9 @@ class ChosenPackageRequirements:
             package = version_chooser.package_for(req.name)
             if package is None:
                 raise PackageNotFound(
-                    f'Package {req.name} not found in the version chooser'
+                    f"Package {req.name} not found in the version chooser"
                 )
             packages.append(package)
-        kwargs['runtime_requirements'] = packages
+        kwargs["runtime_requirements"] = packages
 
         return cls(**kwargs)
