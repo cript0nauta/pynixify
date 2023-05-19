@@ -1,5 +1,5 @@
 diff --git a/flit_core/flit_core/buildapi.py b/flit_core/flit_core/buildapi.py
-index 963bf61..6e52511 100644
+index 963bf61..a8802ca 100644
 --- a/flit_core/flit_core/buildapi.py
 +++ b/flit_core/flit_core/buildapi.py
 @@ -3,6 +3,7 @@ import logging
@@ -54,6 +54,14 @@ index 963bf61..6e52511 100644
  
  # Requirements to build an sdist are the same as for a wheel
  get_requires_for_build_sdist = get_requires_for_build_wheel
+@@ -70,6 +96,7 @@ prepare_metadata_for_build_editable = prepare_metadata_for_build_wheel
+ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+     """Builds a wheel, places it in wheel_directory"""
+     info = make_wheel_in(pyproj_toml, Path(wheel_directory))
++    _write_pynixify_files(config_settings, [])
+     return info.file.name
+ 
+ def build_editable(wheel_directory, config_settings=None, metadata_directory=None):
 diff --git a/flit_core/flit_core/config.py b/flit_core/flit_core/config.py
 index 1292956..1afbba6 100644
 --- a/flit_core/flit_core/config.py
