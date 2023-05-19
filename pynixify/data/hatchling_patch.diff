@@ -86,23 +86,3 @@ index d79c1e2e..c85a837e 100644
 +        _write_pynixify_files(config_settings, builder.config.dependencies)
 
          return os.path.basename(directory)
-diff --git a/src/hatchling/metadata/spec.py b/src/hatchling/metadata/spec.py
-index 43a0fa67..6f0874a0 100644
---- a/src/hatchling/metadata/spec.py
-+++ b/src/hatchling/metadata/spec.py
-@@ -1,3 +1,7 @@
-+import json
-+import os
-+import sys
-+
- DEFAULT_METADATA_VERSION = '2.1'
-
-
-@@ -146,7 +150,6 @@ def construct_metadata_file_2_1(metadata, extra_dependencies=()):
-     if metadata.core.readme:
-         metadata_file += f'Description-Content-Type: {metadata.core.readme_content_type}\n'
-         metadata_file += f'\n{metadata.core.readme}'
--
-     return metadata_file
-
-
