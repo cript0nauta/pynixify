@@ -91,8 +91,6 @@ let
       ++ pkgs.lib.optionals (pkgs.python3.pkgs.pythonOlder "3.11")
       [ pkgs.python3.pkgs.tomli ];
   };
-  patchedpip = pkgs.python3.pkgs.pip.overrideAttrs
-    (ps: { patches = [ ./pip_patch.diff ]; });
 
   pythonWithPackages = pkgs.python3.withPackages (ps: [
     patchedSetuptools
@@ -100,7 +98,7 @@ let
     hatchling
     hatchvcs
     flitscm
-    patchedpip
+    pkgs.python3.pkgs.pip
   ]);
 
   cleanSource = src:
@@ -125,7 +123,7 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    if ${patchedpip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
+    if ${pkgs.python3.pkgs.pip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
         exit 0
     fi
     # Indicate that fetching the result failed, but let the build succeed
