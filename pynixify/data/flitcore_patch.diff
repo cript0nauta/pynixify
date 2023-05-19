@@ -1,5 +1,5 @@
 diff --git a/flit_core/flit_core/buildapi.py b/flit_core/flit_core/buildapi.py
-index 963bf61..f48cbf8 100644
+index 963bf61..6e52511 100644
 --- a/flit_core/flit_core/buildapi.py
 +++ b/flit_core/flit_core/buildapi.py
 @@ -3,6 +3,7 @@ import logging
@@ -10,7 +10,7 @@ index 963bf61..f48cbf8 100644
  from pathlib import Path
  
  from .common import (
-@@ -13,6 +14,13 @@ from .config import read_flit_config
+@@ -13,6 +14,29 @@ from .config import read_flit_config
  from .wheel import make_wheel_in, _write_wheel_file
  from .sdist import SdistBuilder
  
@@ -21,10 +21,26 @@ index 963bf61..f48cbf8 100644
 +        print("out environment variable not defined")
 +        sys.exit(1)
 +
++
++def _write_pynixify_files(config_settings, deps):
++    if config_settings is not None and "PYNIXIFY_OUT" in config_settings:
++        from pathlib import Path
++        import json
++        print(deps)
++        raise Exception
++        pynix_out = Path(config_settings['PYNIXIFY_OUT'])
++        for target in ("tests", "setup", "install"):
++            fp = (pynix_out / ("%s_requires.txt" % target)).open("w")
++            fp.write('\n'.join([str(req) for req in deps]))
++            fp.write('\nflit_core')
++            fp.close()
++        with (pynix_out / 'meta.json').open('w') as fp:
++            json.dump({"version": None, "url": None, "license": None, "description": None}, fp)
++
  log = logging.getLogger(__name__)
  
  # PEP 517 specifies that the CWD will always be the source tree
-@@ -32,9 +40,13 @@ def get_requires_for_build_wheel(config_settings=None):
+@@ -32,9 +56,11 @@ def get_requires_for_build_wheel(config_settings=None):
      docstring, version = get_docstring_and_version_via_ast(module)
  
      if (want_summary and not docstring) or (want_version and not version):
@@ -33,9 +49,7 @@ index 963bf61..f48cbf8 100644
      else:
 -        return []
 +        requires = []
-+    if 'PYNIXIFY' in os.environ:
-+        with (pynix_out / "setup_requires.txt").open("w") as fp:
-+            fp.write('\n'.join(requires))
++    _write_pynixify_files(config_settings, requires)
 +    return requires
  
  # Requirements to build an sdist are the same as for a wheel
