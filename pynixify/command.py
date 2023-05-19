@@ -195,7 +195,6 @@ async def _main_async(
     generate_only_overlay: bool,
     interpreter: str,
 ):
-
     if nixpkgs is not None:
         pynixify.nixpkgs_sources.NIXPKGS_URL = nixpkgs
 
