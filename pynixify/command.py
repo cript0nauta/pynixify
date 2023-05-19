@@ -16,7 +16,6 @@
 
 import argparse
 import asyncio
-import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -28,16 +27,18 @@ from pkg_resources import parse_requirements
 
 import pynixify.nixpkgs_sources
 from pynixify.base import Package
-from pynixify.expression_builder import (build_nix_expression,
-                                         build_overlay_expr,
-                                         build_overlayed_nixpkgs,
-                                         build_shell_nix_expression, nixfmt)
-from pynixify.nixpkgs_sources import (NixpkgsData, load_nixpkgs_data,
-                                      set_max_jobs)
-from pynixify.pypi_api import PyPICache, PyPIData, PyPIPackage, get_path_hash
-from pynixify.version_chooser import (ChosenPackageRequirements,
-                                      VersionChooser,
-                                      evaluate_package_requirements)
+from pynixify.expression_builder import build_nix_expression  # noqa
+from pynixify.expression_builder import build_overlay_expr  # noqa
+from pynixify.expression_builder import build_overlayed_nixpkgs  # noqa
+from pynixify.expression_builder import build_shell_nix_expression  # noqa
+from pynixify.expression_builder import nixfmt  # noqa; noqa
+from pynixify.nixpkgs_sources import set_max_jobs  # noqa
+from pynixify.nixpkgs_sources import NixpkgsData, load_nixpkgs_data  # noqa
+from pynixify.pypi_api import get_path_hash  # noqa
+from pynixify.pypi_api import PyPICache, PyPIData, PyPIPackage  # noqa
+from pynixify.version_chooser import ChosenPackageRequirements  # noqa
+from pynixify.version_chooser import VersionChooser  # noqa
+from pynixify.version_chooser import evaluate_package_requirements  # noqa
 
 
 async def _build_version_chooser(

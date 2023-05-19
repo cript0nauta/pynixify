@@ -27,9 +27,9 @@ from packaging.utils import canonicalize_name
 from pynixify.base import Package, parse_version
 from pynixify.exceptions import NoMatchingVersionFound, PackageNotFound
 from pynixify.nixpkgs_sources import NixPackage, NixpkgsData
-from pynixify.package_requirements import (PackageRequirements,
-                                           eval_path_requirements)
-from pynixify.pypi_api import PyPIData, PyPIPackage
+from pynixify.package_requirements import PackageRequirements  # noqa
+from pynixify.package_requirements import eval_path_requirements  # noqa
+from pynixify.pypi_api import PyPIData, PyPIPackage  # noqa
 
 
 class VersionChooser:
