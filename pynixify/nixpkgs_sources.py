@@ -14,20 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import sys
-import json
 import asyncio
-from pathlib import Path
-from typing import Sequence, Any, Optional
+import json
+import sys
 from collections import defaultdict
 from multiprocessing import cpu_count
-from packaging.utils import canonicalize_name
+from pathlib import Path
+from typing import Any, Optional, Sequence
+
 from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from packaging.version import Version
+
 from pynixify.base import Package, parse_version
-from pynixify.exceptions import PackageNotFound, NixBuildError
+from pynixify.exceptions import NixBuildError, PackageNotFound
 
 NIXPKGS_URL: Optional[str] = None
+
 
 class NixPackage(Package):
     def __init__(self, *, attr: str, version: Version):
@@ -55,18 +58,15 @@ class NixPackage(Package):
               name = "ATTR_dummy_src";
               destination = "/setup.py";
             }
-        """.replace('ATTR', self.attr)
-        args = [
-            '--no-out-link',
-            '--no-build-output',
-            '-E',
-            expr
-        ]
+        """.replace(
+            "ATTR", self.attr
+        )
+        args = ["--no-out-link", "--no-build-output", "-E", expr]
         args += extra_args
         return await run_nix_build(*args)
 
     def __str__(self):
-        return f'NixPackage(attr={self.attr}, version={self.version})'
+        return f"NixPackage(attr={self.attr}, version={self.version})"
 
 
 class NixpkgsData:
@@ -80,9 +80,9 @@ class NixpkgsData:
         try:
             data = self.__data[canonicalize_name(name)]
         except KeyError:
-            raise PackageNotFound(f'{name} is not defined in nixpkgs')
+            raise PackageNotFound(f"{name} is not defined in nixpkgs")
         return [
-            NixPackage(attr=drv['attr'], version=parse_version(drv['version']))
+            NixPackage(attr=drv["attr"], version=parse_version(drv["version"]))
             for drv in data
         ]
 
@@ -94,16 +94,17 @@ class NixpkgsData:
 async def load_nixpkgs_data(extra_args):
     nix_expression_path = Path(__file__).parent / "data" / "pythonPackages.nix"
     args = [
-        '--eval',
-        '--strict',
-        '--json',
+        "--eval",
+        "--strict",
+        "--json",
         str(nix_expression_path),
     ]
     args += extra_args
     if NIXPKGS_URL is not None:
-        args += ['-I', f'nixpkgs={NIXPKGS_URL}']
+        args += ["-I", f"nixpkgs={NIXPKGS_URL}"]
     proc = await asyncio.create_subprocess_exec(
-        'nix-instantiate', *args, stdout=asyncio.subprocess.PIPE)
+        "nix-instantiate", *args, stdout=asyncio.subprocess.PIPE
+    )
     (stdout, _) = await proc.communicate()
     status = await proc.wait()
     assert status == 0
@@ -114,35 +115,34 @@ async def load_nixpkgs_data(extra_args):
 async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
     if NIXPKGS_URL is not None:
         # TODO fix mypy hack
-        args_ = list(args) + ['-I', f'nixpkgs={NIXPKGS_URL}']
+        args_ = list(args) + ["-I", f"nixpkgs={NIXPKGS_URL}"]
     else:
         args_ = list(args)
     # TODO remove mypy ignore below and fix compatibility with mypy 0.790
     proc = await asyncio.create_subprocess_exec(
-        'nix-build', *args_, stdout=asyncio.subprocess.PIPE,  # type: ignore
-        stderr=asyncio.subprocess.PIPE)
+        "nix-build",
+        *args_,
+        stdout=asyncio.subprocess.PIPE,  # type: ignore
+        stderr=asyncio.subprocess.PIPE,
+    )
     (stdout, stderr) = await proc.communicate()
     status = await proc.wait()
 
-    if b'all build users are currently in use' in stderr and retries < max_retries:
+    if b"all build users are currently in use" in stderr and retries < max_retries:
         # perform an expotential backoff and retry
         # TODO think a way to avoid relying in the error message
         sys.stderr.write(
-            f'warning: All build users are currently in use. '
-            f'Retrying in {2**retries} seconds\n'
+            f"warning: All build users are currently in use. "
+            f"Retrying in {2**retries} seconds\n"
         )
-        await asyncio.sleep(2**retries)
-        return await run_nix_build(
-            *args,
-            retries=retries+1,
-            max_retries=max_retries
-        )
+        await asyncio.sleep(2 ** retries)  # noqa
+        return await run_nix_build(*args, retries=retries + 1, max_retries=max_retries)
     elif retries >= max_retries:
-        sys.stderr.write(f'error: Giving up after {max_retries} failed retries\n')
+        sys.stderr.write(f"error: Giving up after {max_retries} failed retries\n")
 
     if status:
         print(stderr.decode(), file=sys.stderr)
-        raise NixBuildError(f'nix-build failed with code {status}')
+        raise NixBuildError(f"nix-build failed with code {status}")
     return Path(stdout.strip().decode())
 
 
