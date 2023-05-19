@@ -115,7 +115,7 @@ overlayed_nixpkgs_template = Template(
 
         packageOverrides = self: super: {
             % for (package_name, path) in overlays.items():
-                ${"_" + package_name} =
+                ${package_name} =
                     self.callPackage
                         ${'' if path.is_absolute() else './'}${str(path).replace('/default.nix', '')} {};
 
@@ -181,7 +181,7 @@ def build_overlay_expr(overlays: Mapping[str, Path]):
         """
     self: super: {
             % for (package_name, path) in overlays.items():
-                ${package_name} =
+                ${"_" + package_name} =
                     self.callPackage
                         ${'' if path.is_absolute() else './'}${str(path).replace('/default.nix', '')} {};
 
