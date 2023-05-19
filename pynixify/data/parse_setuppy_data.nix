@@ -92,7 +92,7 @@ let
       [ pkgs.python3.pkgs.tomli ];
   };
   patchedpip = pkgs.python3.pkgs.pip.overrideAttrs
-    (ps: { patches = [ ./pip_patch_final.diff ]; });
+    (ps: { patches = [ ./pip_patch.diff ]; });
 
   pythonWithPackages = pkgs.python3.withPackages (ps: [
     patchedSetuptools
@@ -125,7 +125,6 @@ in pkgs.stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    #${patchedpip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD
     if ${patchedpip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
         exit 0
     fi

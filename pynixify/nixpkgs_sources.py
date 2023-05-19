@@ -122,7 +122,6 @@ async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path
         'nix-build', *args_, stdout=asyncio.subprocess.PIPE,  # type: ignore
         stderr=asyncio.subprocess.PIPE)
     (stdout, stderr) = await proc.communicate()
-    #print("%s\n%s" % (stdout.decode(), stderr.decode()))
     status = await proc.wait()
 
     if b'all build users are currently in use' in stderr and retries < max_retries:

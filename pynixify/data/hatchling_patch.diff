@@ -1,5 +1,5 @@
 diff --git a/src/hatchling/build.py b/src/hatchling/build.py
-index d79c1e2e..d966e687 100644
+index d79c1e2e..c85a837e 100644
 --- a/src/hatchling/build.py
 +++ b/src/hatchling/build.py
 @@ -1,6 +1,20 @@
@@ -39,28 +39,7 @@ index d79c1e2e..d966e687 100644
      return os.path.basename(next(builder.build(sdist_directory, ['standard'])))
 
 
-@@ -28,7 +44,10 @@ def get_requires_for_build_wheel(config_settings=None):
-     from hatchling.builders.wheel import WheelBuilder
-
-     builder = WheelBuilder(os.getcwd())
--    return builder.config.dependencies
-+    deps = builder.config.dependencies
-+    _write_pynixify_files(config_settings, deps)
-+
-+    return deps
-
-
- def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
-@@ -38,6 +57,8 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
-     from hatchling.builders.wheel import WheelBuilder
-
-     builder = WheelBuilder(os.getcwd())
-+    deps = builder.config.dependencies
-+    _write_pynixify_files(config_settings, deps)
-     return os.path.basename(next(builder.build(wheel_directory, ['standard'])))
-
-
-@@ -48,6 +69,7 @@ def get_requires_for_build_editable(config_settings=None):
+@@ -28,6 +44,7 @@ def get_requires_for_build_wheel(config_settings=None):
      from hatchling.builders.wheel import WheelBuilder
 
      builder = WheelBuilder(os.getcwd())
@@ -68,7 +47,23 @@ index d79c1e2e..d966e687 100644
      return builder.config.dependencies
 
 
-@@ -58,6 +80,7 @@ def build_editable(wheel_directory, config_settings=None, metadata_directory=Non
+@@ -38,6 +55,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return os.path.basename(next(builder.build(wheel_directory, ['standard'])))
+
+
+@@ -48,6 +66,7 @@ def get_requires_for_build_editable(config_settings=None):
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return builder.config.dependencies
+
+
+@@ -58,6 +77,7 @@ def build_editable(wheel_directory, config_settings=None, metadata_directory=Non
      from hatchling.builders.wheel import WheelBuilder
 
      builder = WheelBuilder(os.getcwd())
@@ -76,16 +71,7 @@ index d79c1e2e..d966e687 100644
      return os.path.basename(next(builder.build(wheel_directory, ['editable'])))
 
 
-@@ -80,6 +103,8 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
-         https://peps.python.org/pep-0517/#prepare-metadata-for-build-wheel
-         """
-         from hatchling.builders.wheel import WheelBuilder
-+        if config_settings is not None and "PYNIXIFY_OUT" in config_settings:
-+            os.environ["PYNIXIFY_OUT"] = config_settings["PYNIXIFY_OUT"]
-
-         builder = WheelBuilder(os.getcwd())
-
-@@ -89,6 +114,7 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
+@@ -89,6 +109,7 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
 
          with open(os.path.join(directory, 'METADATA'), 'w', encoding='utf-8') as f:
              f.write(builder.config.core_metadata_constructor(builder.metadata))
@@ -93,84 +79,30 @@ index d79c1e2e..d966e687 100644
 
          return os.path.basename(directory)
 
-@@ -97,6 +123,8 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
-         https://peps.python.org/pep-0660/#prepare-metadata-for-build-editable
-         """
-         from hatchling.builders.wheel import EDITABLES_MINIMUM_VERSION, WheelBuilder
-+        if config_settings is not None and "PYNIXIFY_OUT" in config_settings:
-+            os.environ["PYNIXIFY_OUT"] = config_settings["PYNIXIFY_OUT"]
-
-         builder = WheelBuilder(os.getcwd())
-
-@@ -110,5 +138,6 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
+@@ -110,5 +131,6 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
 
          with open(os.path.join(directory, 'METADATA'), 'w', encoding='utf-8') as f:
              f.write(builder.config.core_metadata_constructor(builder.metadata, extra_dependencies=extra_dependencies))
 +        _write_pynixify_files(config_settings, builder.config.dependencies)
 
          return os.path.basename(directory)
-diff --git a/src/hatchling/metadata/core.py b/src/hatchling/metadata/core.py
-index 24544ad1..daa91f87 100644
---- a/src/hatchling/metadata/core.py
-+++ b/src/hatchling/metadata/core.py
-@@ -11,6 +11,11 @@ if sys.version_info >= (3, 11):
- else:
-     import tomli as tomllib
-
-+pynix_out = None
-+if 'PYNIXIFY_OUT' in os.environ:
-+    from pathlib import Path
-+    pynix_out = Path(os.environ['PYNIXIFY_OUT'])
-+
-
- def load_toml(path):
-     with open(path, encoding='utf-8') as f:
-@@ -250,6 +255,9 @@ class BuildMetadata:
-                     raise ValueError(f'Dependency #{i} of field `build-system.requires` is invalid: {e}')
-
-             self._requires_complex = requires_complex
-+            if pynix_out:
-+                with (pynix_out / "setup_requires.txt").open("w") as fp:
-+                    fp.write('\n'.join([str(req) for req in self._requires_complex]))
-
-         return self._requires_complex
-
-@@ -1074,6 +1082,13 @@ class CoreMetadata:
-                     dependencies_complex[get_normalized_dependency(requirement)] = requirement
-
-             self._dependencies_complex = dict(sorted(dependencies_complex.items()))
-+            if pynix_out:
-+                with (pynix_out / "setup_requires.txt").open("w") as fp:
-+                    fp.write('\n'.join([str(req) for req in self._dependencies_complex]))
-+                with (pynix_out / "install_requires.txt").open("w") as fp:
-+                    fp.write('\n'.join([str(req) for req in self._dependencies_complex]))
-+                with (pynix_out / "tests_requires.txt").open("w") as fp:
-+                    fp.write('\n'.join([str(req) for req in self._dependencies_complex]))
-
-         return self._dependencies_complex
-
 diff --git a/src/hatchling/metadata/spec.py b/src/hatchling/metadata/spec.py
-index 43a0fa67..2182e3c6 100644
+index 43a0fa67..6f0874a0 100644
 --- a/src/hatchling/metadata/spec.py
 +++ b/src/hatchling/metadata/spec.py
-@@ -1,3 +1,12 @@
+@@ -1,3 +1,7 @@
 +import json
 +import os
 +import sys
 +
-+pynix_out = None
-+if 'PYNIXIFY_OUT' in os.environ:
-+    from pathlib import Path
-+    pynix_out = Path(os.environ['PYNIXIFY_OUT'])
-+
  DEFAULT_METADATA_VERSION = '2.1'
 
 
-@@ -147,6 +156,7 @@ def construct_metadata_file_2_1(metadata, extra_dependencies=()):
+@@ -146,7 +150,6 @@ def construct_metadata_file_2_1(metadata, extra_dependencies=()):
+     if metadata.core.readme:
          metadata_file += f'Description-Content-Type: {metadata.core.readme_content_type}\n'
          metadata_file += f'\n{metadata.core.readme}'
-
-+
+-
      return metadata_file
 
 

@@ -1,5 +1,5 @@
 diff --git a/flit_core/flit_core/buildapi.py b/flit_core/flit_core/buildapi.py
-index 963bf61..a8802ca 100644
+index 963bf61..5190b7e 100644
 --- a/flit_core/flit_core/buildapi.py
 +++ b/flit_core/flit_core/buildapi.py
 @@ -3,6 +3,7 @@ import logging
@@ -10,24 +10,14 @@ index 963bf61..a8802ca 100644
  from pathlib import Path
  
  from .common import (
-@@ -13,6 +14,29 @@ from .config import read_flit_config
+@@ -13,6 +14,19 @@ from .config import read_flit_config
  from .wheel import make_wheel_in, _write_wheel_file
  from .sdist import SdistBuilder
  
-+if 'PYNIXIFY' in os.environ:
-+    try:
-+        pynix_out = Path(os.environ['out'])
-+    except KeyError:
-+        print("out environment variable not defined")
-+        sys.exit(1)
-+
-+
 +def _write_pynixify_files(config_settings, deps):
 +    if config_settings is not None and "PYNIXIFY_OUT" in config_settings:
 +        from pathlib import Path
 +        import json
-+        print(deps)
-+        raise Exception
 +        pynix_out = Path(config_settings['PYNIXIFY_OUT'])
 +        for target in ("tests", "setup", "install"):
 +            fp = (pynix_out / ("%s_requires.txt" % target)).open("w")
@@ -40,21 +30,7 @@ index 963bf61..a8802ca 100644
  log = logging.getLogger(__name__)
  
  # PEP 517 specifies that the CWD will always be the source tree
-@@ -32,9 +56,11 @@ def get_requires_for_build_wheel(config_settings=None):
-     docstring, version = get_docstring_and_version_via_ast(module)
- 
-     if (want_summary and not docstring) or (want_version and not version):
--        return info.metadata.get('requires_dist', [])
-+        requires = info.metadata.get('requires_dist', [])
-     else:
--        return []
-+        requires = []
-+    _write_pynixify_files(config_settings, requires)
-+    return requires
- 
- # Requirements to build an sdist are the same as for a wheel
- get_requires_for_build_sdist = get_requires_for_build_wheel
-@@ -70,6 +96,7 @@ prepare_metadata_for_build_editable = prepare_metadata_for_build_wheel
+@@ -70,6 +84,7 @@ prepare_metadata_for_build_editable = prepare_metadata_for_build_wheel
  def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
      """Builds a wheel, places it in wheel_directory"""
      info = make_wheel_in(pyproj_toml, Path(wheel_directory))
@@ -62,44 +38,3 @@ index 963bf61..a8802ca 100644
      return info.file.name
  
  def build_editable(wheel_directory, config_settings=None, metadata_directory=None):
-diff --git a/flit_core/flit_core/config.py b/flit_core/flit_core/config.py
-index 1292956..1afbba6 100644
---- a/flit_core/flit_core/config.py
-+++ b/flit_core/flit_core/config.py
-@@ -4,6 +4,8 @@ import errno
- import logging
- import os
- import os.path as osp
-+import sys
-+import json
- from pathlib import Path
- import re
- 
-@@ -21,6 +23,13 @@ from .versionno import normalise_version
- 
- log = logging.getLogger(__name__)
- 
-+if 'PYNIXIFY' in os.environ:
-+    try:
-+        pynix_out = Path(os.environ['out'])
-+    except KeyError:
-+        print("out environment variable not defined")
-+        sys.exit(1)
-+
- 
- class ConfigError(ValueError):
-     pass
-@@ -175,6 +184,13 @@ def prep_toml_config(d, path):
-         loaded_cfg.data_directory = path.parent / data_dir
-         if not loaded_cfg.data_directory.is_dir():
-             raise ConfigError(f"{toml_key} must refer to a directory")
-+    if 'PYNIXIFY' in os.environ:
-+        metadata = {}
-+        for attr in ("version", "url", "license", "description"):
-+            metadata[attr] = loaded_cfg.metadata[attr]
-+        metadata["_fmt"] = "pyproject"
-+        with (pynix_out / 'meta.json').open('w') as fp:
-+            json.dump(metadata, fp)
- 
-     return loaded_cfg
- 

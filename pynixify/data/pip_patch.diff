@@ -1,13 +1,10 @@
 diff --git a/src/pip/_internal/commands/install.py b/src/pip/_internal/commands/install.py
-index 29907645c..d71b4e603 100644
+index 29907645c..ae0bb944a 100644
 --- a/src/pip/_internal/commands/install.py
 +++ b/src/pip/_internal/commands/install.py
-@@ -411,14 +411,13 @@ class InstallCommand(RequirementCommand):
-             reqs_to_build = [
-                 r
+@@ -413,12 +413,11 @@ class InstallCommand(RequirementCommand):
                  for r in requirement_set.requirements.values()
--                if should_build_for_install_command(r, check_binary_allowed)
-+                if True or should_build_for_install_command(r, check_binary_allowed)
+                 if should_build_for_install_command(r, check_binary_allowed)
              ]
 -
              _, build_failures = build(
@@ -20,15 +17,10 @@ index 29907645c..d71b4e603 100644
              )
  
 diff --git a/src/pip/_internal/commands/wheel.py b/src/pip/_internal/commands/wheel.py
-index 9dd6c82f2..c54f67554 100644
+index 9dd6c82f2..78ff796c5 100644
 --- a/src/pip/_internal/commands/wheel.py
 +++ b/src/pip/_internal/commands/wheel.py
-@@ -148,15 +148,16 @@ class WheelCommand(RequirementCommand):
-         for req in requirement_set.requirements.values():
-             if req.is_wheel:
-                 preparer.save_linked_requirement(req)
--            elif should_build_for_wheel_command(req):
-+            elif True or should_build_for_wheel_command(req):
+@@ -152,11 +152,12 @@ class WheelCommand(RequirementCommand):
                  reqs_to_build.append(req)
  
          # build wheels
@@ -43,7 +35,7 @@ index 9dd6c82f2..c54f67554 100644
          )
          for req in build_successes:
 diff --git a/src/pip/_internal/operations/build/metadata.py b/src/pip/_internal/operations/build/metadata.py
-index e2b7b4445..cd144e024 100644
+index e2b7b4445..a184dbc7c 100644
 --- a/src/pip/_internal/operations/build/metadata.py
 +++ b/src/pip/_internal/operations/build/metadata.py
 @@ -15,7 +15,7 @@ from pip._internal.utils.temp_dir import TempDirectory
@@ -51,7 +43,7 @@ index e2b7b4445..cd144e024 100644
  
  def generate_metadata(
 -    build_env: BuildEnvironment, backend: Pep517HookCaller, details: str
-+        build_env: BuildEnvironment, backend: Pep517HookCaller, details: str, config_settings
++    build_env: BuildEnvironment, backend: Pep517HookCaller, details: str, config_settings
  ) -> str:
      """Generate metadata using mechanisms described in PEP 517.
  
@@ -65,7 +57,7 @@ index e2b7b4445..cd144e024 100644
                  raise MetadataGenerationFailed(package_details=details) from error
  
 diff --git a/src/pip/_internal/operations/build/wheel.py b/src/pip/_internal/operations/build/wheel.py
-index b0d2fc9ea..d44b64ec9 100644
+index b0d2fc9ea..fafa8a8ac 100644
 --- a/src/pip/_internal/operations/build/wheel.py
 +++ b/src/pip/_internal/operations/build/wheel.py
 @@ -14,6 +14,7 @@ def build_wheel_pep517(
@@ -76,25 +68,14 @@ index b0d2fc9ea..d44b64ec9 100644
  ) -> Optional[str]:
      """Build one InstallRequirement using the PEP 517 build process.
  
-@@ -24,14 +25,16 @@ def build_wheel_pep517(
-         logger.debug("Destination directory: %s", tempd)
- 
-         runner = runner_with_spinner_message(
--            f"Building wheel for {name} (pyproject.toml)"
-+            f"Emmett is Building wheel for {name} (pyproject.toml)"
-         )
-         with backend.subprocess_runner(runner):
+@@ -30,6 +31,7 @@ def build_wheel_pep517(
              wheel_name = backend.build_wheel(
                  tempd,
                  metadata_directory=metadata_directory,
 +                config_settings=config_settings,
              )
      except Exception:
--        logger.error("Failed building wheel for %s", name)
-+        logger.error("Emmett Failed building wheel for %s", name)
-+        raise
-         return None
-     return os.path.join(tempd, wheel_name)
+         logger.error("Failed building wheel for %s", name)
 diff --git a/src/pip/_internal/req/req_install.py b/src/pip/_internal/req/req_install.py
 index a1e376c89..948b092ac 100644
 --- a/src/pip/_internal/req/req_install.py
