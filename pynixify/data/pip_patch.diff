@@ -1,21 +1,3 @@
-diff --git a/src/pip/_internal/commands/install.py b/src/pip/_internal/commands/install.py
-index 29907645c..ae0bb944a 100644
---- a/src/pip/_internal/commands/install.py
-+++ b/src/pip/_internal/commands/install.py
-@@ -413,12 +413,11 @@ class InstallCommand(RequirementCommand):
-                 for r in requirement_set.requirements.values()
-                 if should_build_for_install_command(r, check_binary_allowed)
-             ]
--
-             _, build_failures = build(
-                 reqs_to_build,
-                 wheel_cache=wheel_cache,
-                 verify=True,
--                build_options=[],
-+                build_options=[options.config_settings],
-                 global_options=[],
-             )
- 
 diff --git a/src/pip/_internal/commands/wheel.py b/src/pip/_internal/commands/wheel.py
 index 9dd6c82f2..78ff796c5 100644
 --- a/src/pip/_internal/commands/wheel.py
@@ -108,19 +90,3 @@ index 77a17ff0f..ef1009dba 100644
                  )
          else:
              wheel_path = build_wheel_legacy(
-diff --git a/src/pip/_vendor/pep517/in_process/_in_process.py b/src/pip/_vendor/pep517/in_process/_in_process.py
-index 954a4ab05..03299cdbc 100644
---- a/src/pip/_vendor/pep517/in_process/_in_process.py
-+++ b/src/pip/_vendor/pep517/in_process/_in_process.py
-@@ -253,11 +253,6 @@ def build_wheel(wheel_directory, config_settings, metadata_directory=None):
-     prepare_metadata_for_build_wheel fallback, this
-     will copy it rather than rebuilding the wheel.
-     """
--    prebuilt_whl = _find_already_built_wheel(metadata_directory)
--    if prebuilt_whl:
--        shutil.copy2(prebuilt_whl, wheel_directory)
--        return os.path.basename(prebuilt_whl)
--
-     return _build_backend().build_wheel(wheel_directory, config_settings,
-                                         metadata_directory)
- 
