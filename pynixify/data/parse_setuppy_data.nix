@@ -127,7 +127,7 @@ in stdenv.mkDerivation {
     if PYNIXIFY=1 python setup.py install; then
         exit 0
     fi
-    if ${python.pkgs.pip}/bin/pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
+    if pip --no-cache-dir wheel --config-settings PYNIXIFY_OUT=$out --no-build-isolation $PWD; then
         exit 0
     fi
     # Indicate that fetching the result failed, but let the build succeed
