@@ -37,4 +37,4 @@ jobs:
     - run: nix-build --arg runMypy false  # TODO run mypy in unstable
     - run: nix-shell --command 'pytest -v tests/ acceptance_tests'
     - run: |
-        nix-env -if default.nix --arg runMypy false && nix-shell -p bats --command './acceptance_tests/test_command.sh'
+        nix-env -if default.nix --arg runMypy true && nix-shell -p bats --command './acceptance_tests/test_command.sh'
