@@ -1,5 +1,6 @@
 { file, stdenv ? (import <nixpkgs> { }).stdenv, lib ? (import <nixpkgs> { }).lib
 , unzip ? (import <nixpkgs> { }).unzip, python ? (import <nixpkgs> { }).python3
+, git ? (import <nixpkgs> { }).git, fetchFromGitLab ? (import <nixpkgs> { }).fetchFromGitLab
 }:
 
 let
@@ -62,7 +63,7 @@ let
 
     propagatedBuildInputs = [ hatchling setuptoolsscm ];
 
-    checkInputs = [ pkgs.git python.pkgs.pytestCheckHook ];
+    checkInputs = [ git python.pkgs.pytestCheckHook ];
 
     disabledTests = [
       # incompatible with setuptools-scm>=7
@@ -80,7 +81,7 @@ let
 
     format = "pyproject";
 
-    src = pkgs.fetchFromGitLab {
+    src = fetchFromGitLab {
       owner = "WillDaSilva";
       repo = "flit_scm";
       rev = version;
@@ -89,9 +90,9 @@ let
     };
 
     nativeBuildInputs =
-      [ patchedflitcore setuptoolsscm python.pkgs.tomli pkgs.git ];
+      [ patchedflitcore setuptoolsscm python.pkgs.tomli git ];
     propagatedBuildInputs = [ patchedflitcore setuptoolsscm ]
-      ++ pkgs.lib.optionals (python.pkgs.pythonOlder "3.11")
+      ++ lib.optionals (python.pkgs.pythonOlder "3.11")
       [ python.pkgs.tomli ];
   };
 
