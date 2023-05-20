@@ -153,6 +153,15 @@ def main():
             "executed by pynixify. If it isn't specified, it will be set to "
             "the number of CPUs in the system."
         ))
+    parser.add_argument(
+        "-p",
+        "--py",
+        default="python3",
+        help=(
+            "Name of the nixpkgs python interpreter package to install in the "
+            "generated shell.nix. Defaults to 'python3'."
+        ),
+    )
     args = parser.parse_args()
 
     asyncio.run(_main_async(
@@ -166,6 +175,7 @@ def main():
         ignore_test_requirements_for=args.ignore_tests.split(',') if args.ignore_tests else [],
         max_jobs=args.max_jobs,
         generate_only_overlay=args.overlay_only,
+        interpreter=args.py,
     ))
 
 async def _main_async(
@@ -178,7 +188,8 @@ async def _main_async(
         ignore_test_requirements_for: List[str],
         load_all_test_requirements: bool,
         max_jobs: Optional[int],
-        generate_only_overlay:bool):
+        generate_only_overlay: bool,
+        interpreter: str):
 
     if nixpkgs is not None:
         pynixify.nixpkgs_sources.NIXPKGS_URL = nixpkgs
@@ -277,7 +288,7 @@ async def _main_async(
         packages.append(p)
 
     with (base_path / 'shell.nix').open('w') as fp:
-        expr = build_shell_nix_expression(packages)
+        expr = build_shell_nix_expression(packages, interpreter)
         fp.write(await nixfmt(expr))
 
 
