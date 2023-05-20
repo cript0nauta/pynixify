@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, Dict
-from packaging.version import Version, LegacyVersion, parse as parse_original
+from packaging.version import Version, parse as parse_original
 
 @dataclass
 class PackageMetadata:
@@ -81,5 +81,4 @@ class Package:
 # mypy hack
 def parse_version(version: str) -> Version:
     v = parse_original(version)
-    assert not isinstance(v, LegacyVersion)
     return v

@@ -110,6 +110,24 @@ async def load_nixpkgs_data(extra_args):
     ret = json.loads(stdout)
     return ret
 
+async def load_nixpkgs_version() -> str:
+    args = [
+        '--eval',
+        '--strict',
+        '--expr',
+        'with import <nixpkgs> {}; lib.version'
+    ]
+    if NIXPKGS_URL is not None:
+        args += ['-I', f'nixpkgs={NIXPKGS_URL}']
+    proc = await asyncio.create_subprocess_exec(
+        'nix-instantiate', *args, stdout=asyncio.subprocess.PIPE)
+    (stdout, _) = await proc.communicate()
+    status = await proc.wait()
+    assert status == 0
+    ret = json.loads(stdout)
+    return ret
+
+
 
 async def _run_nix_build(*args: Sequence[str], retries=0, max_retries=5) -> Path:
     if NIXPKGS_URL is not None:

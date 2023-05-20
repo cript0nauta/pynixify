@@ -98,6 +98,7 @@ async def test_compiles(version_chooser):
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
         NO_METADATA,
+        nixpkgs_version="23.05",
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
 
@@ -117,6 +118,7 @@ async def test_duplicate_parameter(version_chooser):
         version_chooser.package_for('sampleproject'),
         requirements,
         NO_METADATA,
+        nixpkgs_version="23.05",
         sha256='aaaaaa')
     assert await is_valid_nix(result), "Invalid Nix expression"
 
@@ -129,6 +131,7 @@ async def test_call(version_chooser):
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
         NO_METADATA,
+        nixpkgs_version="23.05",
         sha256='aaaaaa')
     assert await is_valid_nix(result, **DEFAULT_ARGS), "Invalid Nix expression"
 
@@ -162,6 +165,7 @@ async def test_metadata(version_chooser):
         version_chooser.package_for('sampleproject'),
         NO_REQUIREMENTS,
         sha256='aaaaaa',
+        nixpkgs_version="23.05",
         metadata=PackageMetadata(
             description=desc,
             url=None,

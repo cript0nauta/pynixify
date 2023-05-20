@@ -69,7 +69,7 @@ expression_template = Template("""${DISCLAIMER}
             propagatedBuildInputs = [ ${' '.join(runtime_requirements)} ];
         % endif
         % if test_requirements:
-            checkInputs = [ ${' '.join(test_requirements)} ];
+            ${ 'checkInputs' if is_old_nixpkgs else 'nativeBuildInputs' } = [ ${' '.join(test_requirements)} ];
         % endif
 
         % if test_requirements:
@@ -145,6 +145,7 @@ def build_nix_expression(
         requirements: ChosenPackageRequirements,
         metadata: PackageMetadata,
         sha256: str,
+        nixpkgs_version: str,
         fetchPypi: Optional[Tuple[str, str]] = None,
     ) -> str:
     non_python_dependencies = ['lib', 'fetchPypi', 'buildPythonPackage']
@@ -162,6 +163,7 @@ def build_nix_expression(
 
     version = str(package.version)
     nix = escape_string
+    is_old_nixpkgs = int(nixpkgs_version.split('.')[0]) <= 22
     return expression_template.render(DISCLAIMER=DISCLAIMER, **locals())
 
 def build_overlay_expr(overlays: Mapping[str, Path]):

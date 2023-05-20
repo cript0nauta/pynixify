@@ -27,6 +27,7 @@ from pynixify.base import Package
 from pynixify.nixpkgs_sources import (
     NixpkgsData,
     load_nixpkgs_data,
+    load_nixpkgs_version,
     set_max_jobs,
 )
 from pynixify.pypi_api import (
@@ -224,6 +225,7 @@ async def _main_async(
 
         sha256 = await get_path_hash(await package.source())
         meta = await package.metadata()
+        version = await load_nixpkgs_version()
         try:
             (pname, ext) = await get_pypi_data(
                 package.download_url,
@@ -232,10 +234,10 @@ async def _main_async(
             )
         except RuntimeError:
             expr = build_nix_expression(
-                package, reqs, meta, sha256)
+                package, reqs, meta, sha256, version)
         else:
             expr = build_nix_expression(
-                package, reqs, meta, sha256, fetchPypi=(pname, ext))
+                package, reqs, meta, sha256, version, fetchPypi=(pname, ext))
         expression_dir = (packages_path / f'{package.pypi_name}/')
         expression_dir.mkdir(exist_ok=True)
         expression_path = expression_dir / 'default.nix'

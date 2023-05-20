@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import re
 import sys
 import pytest
 import asyncio
@@ -23,6 +24,7 @@ from packaging.requirements import Requirement
 from packaging.version import Version, parse
 from pynixify.nixpkgs_sources import (
     load_nixpkgs_data,
+    load_nixpkgs_version,
     NixpkgsData,
 )
 from pynixify.pypi_api import (
@@ -210,7 +212,7 @@ async def test_build_sampleproject_expression(fetchPypi):
         runtime_requirements=[c.package_for('peppercorn')]  # type: ignore
     )
     meta = await package.metadata()
-    expr = build_nix_expression(package, reqs, meta, sha256, fetchPypi)
+    expr = build_nix_expression(package, reqs, meta, sha256, await load_nixpkgs_version(), fetchPypi)
 
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
@@ -242,7 +244,7 @@ async def test_build_textwrap3_expression():
         runtime_requirements=[],
     )
     meta = await package.metadata()
-    expr = build_nix_expression(package, reqs, meta, sha256, ('textwrap3', 'zip'))
+    expr = build_nix_expression(package, reqs, meta, sha256, await load_nixpkgs_version(), ('textwrap3', 'zip'))
     print(expr)
     wrapper_expr = f'(import <nixpkgs> {{}}).python3.pkgs.callPackage ({expr}) {{}}'
     print(wrapper_expr)
@@ -269,7 +271,7 @@ async def test_build_sampleproject_nixpkgs():
     meta = await package.metadata()
     assert package.version == Version('1.3.1')
     sampleproject_expr = build_nix_expression(
-        package, reqs, meta, sha256)
+        package, reqs, meta, sha256, await load_nixpkgs_version())
 
     with tempfile.NamedTemporaryFile(suffix='.nix') as fp:
         fp.write(sampleproject_expr.encode())
@@ -287,3 +289,8 @@ async def test_build_sampleproject_nixpkgs():
     stdout, stderr = await proc.communicate()
     assert (await proc.wait()) == 0
     assert b'Call your main application code here' in stdout
+
+@pytest.mark.asyncio
+async def test_nixpkgs_version():
+    ver = await load_nixpkgs_version()
+    assert re.match(r'^\d{2}\.\d{2}', ver) is not None

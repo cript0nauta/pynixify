@@ -3,36 +3,32 @@ with (import ./nix/nixpkgs.nix { });
 
 let
   outerNixfmt = nixfmt;
-in
 
-# Allow specifying a custom version of nixfmt
-{ nixfmt ? null, runMypy ? true }:
+  # Allow specifying a custom version of nixfmt
+in { nixfmt ? null, runMypy ? true }:
 
 let
-  chosenNixfmt =
-    if isNull nixfmt then
-      outerNixfmt
-    else
-      nixfmt;
-in
+  chosenNixfmt = if isNull nixfmt then outerNixfmt else nixfmt;
 
-# Use pynixify's generated expression, but override it to add additional
-# dependencies and to convert it to an application in order to improve the
-# derivation name.
-python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
-  (drv: rec {
-    # Add system dependencies
-    checkInputs = drv.checkInputs ++ [ nix chosenNixfmt bats ];
+  # Use pynixify's generated expression, but override it to add additional
+  # dependencies and to convert it to an application in order to improve the
+  # derivation name.
+in python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
+  (drv:
 
-    nativeBuildInputs = checkInputs;  # TODO check why we need this
+    (if lib.versions.major lib.version >= "23" then {
+      nativeBuildInputs = drv.nativeBuildInputs ++ [ nix chosenNixfmt bats ];
+    } else {
+      checkInputs = drv.nativeBuildInputs ++ [ nix chosenNixfmt bats ];
+    }) // {
 
-    checkPhase = ''
-      ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
-      pytest tests/ -m 'not usesnix'  # We can't run Nix inside Nix builds
-    '';
+      checkPhase = ''
+        ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
+        pytest tests/ -m 'not usesnix'  # We can't run Nix inside Nix builds
+      '';
 
-    postInstall = ''
-      # Add nixfmt to pynixify's PATH
-      wrapProgram $out/bin/pynixify --prefix PATH : "${chosenNixfmt}/bin"
-    '';
-  }))
+      postInstall = ''
+        # Add nixfmt to pynixify's PATH
+        wrapProgram $out/bin/pynixify --prefix PATH : "${chosenNixfmt}/bin"
+      '';
+    }))

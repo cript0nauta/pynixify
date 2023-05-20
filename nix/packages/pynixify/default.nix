@@ -12,7 +12,8 @@ buildPythonPackage rec {
   src = lib.cleanSource ../../..;
 
   propagatedBuildInputs = [ packaging setuptools aiohttp aiofiles Mako ];
-  checkInputs = [ pytest pytest-asyncio mypy types-aiofiles types-setuptools ];
+  nativeBuildInputs =
+    [ pytest pytest-asyncio mypy types-aiofiles types-setuptools ];
 
   checkPhase = "true  # TODO fill with the real command for testing";
 

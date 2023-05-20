@@ -6,11 +6,11 @@
 
 buildPythonPackage rec {
   pname = "types-aiofiles";
-  version = "0.7.3";
+  version = "23.1.0.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1nhcm80pybyfg1a9lk67f87i0zalx3vxh51ypbsh48r58lvphm2w";
+    sha256 = "0qhllm1zhrr562sqjiwq8s5q8g2xkllp0qg5lijrls6xgjgna2pa";
   };
 
   # TODO FIXME
