@@ -58,13 +58,17 @@ async def eval_path_requirements(path: Path) -> PackageRequirements:
             runtime_requirements=[]
         )
     assert nix_expression_path.exists()
+    interpreter = "python37"
     nix_store_path = await run_nix_build(
         str(nix_expression_path),
         '--no-out-link',
         '--no-build-output',
         '--arg',
         'file',
-        str(path.resolve())
+        str(path.resolve()),
+        '--arg',
+        'python',
+        "(import <nixpkgs> { }).%s" % interpreter
     )
     if (nix_store_path / 'failed').exists():
         print(f'Error parsing requirements of {path}. Assuming it has no dependencies.')
