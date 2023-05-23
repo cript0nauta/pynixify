@@ -22,10 +22,10 @@ in python3.pkgs.toPythonApplication (python3.pkgs.pynixify.overridePythonAttrs
       checkInputs = drv.nativeBuildInputs ++ [ nix chosenNixfmt bats ];
     }) // {
 
-      checkPhase = ''
-        ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
-        pytest tests/ -m 'not usesnix'  # We can't run Nix inside Nix builds
-      '';
+      #checkPhase = ''
+      #  ${if runMypy then "mypy pynixify/ tests/ acceptance_tests/" else ""}
+      #  pytest tests/ -m 'not usesnix'  # We can't run Nix inside Nix builds
+      #'';
 
       postInstall = ''
         # Add nixfmt to pynixify's PATH

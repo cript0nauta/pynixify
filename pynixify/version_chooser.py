@@ -46,7 +46,7 @@ class VersionChooser:
         self.evaluate_requirements = req_evaluate
         self.should_load_tests = should_load_tests
 
-    async def require(self, r: Requirement, coming_from: Optional[Package]=None):
+    async def require(self, r: Requirement, interpreter: str, coming_from: Optional[Package]=None):
         pkg: Package
 
         if r.marker and not r.marker.evaluate():
@@ -119,14 +119,14 @@ class VersionChooser:
 
             pkg = max(pkgs, key=operator.attrgetter('version'))
         self._choosed_packages[canonicalize_name(r.name)] = (pkg, r.specifier)
-        reqs: PackageRequirements = await self.evaluate_requirements(pkg)
+        reqs: PackageRequirements = await self.evaluate_requirements(pkg, extra_args=[interpreter])
 
         if isinstance(pkg, NixPackage) or (
                 not self.should_load_tests(canonicalize_name(r.name))):
             reqs.test_requirements = []
 
         await asyncio.gather(*(
-            self.require(req, coming_from=pkg)
+            self.require(req, interpreter, coming_from=pkg)
             for req in (reqs.runtime_requirements + reqs.test_requirements +
                         reqs.build_requirements)
         ))
@@ -160,8 +160,9 @@ class VersionChooser:
 
 async def evaluate_package_requirements(
         pkg: Package, extra_args=[]) -> PackageRequirements:
+    interpreter = extra_args.pop()
     src = await pkg.source(extra_args)
-    return await eval_path_requirements(src)
+    return await eval_path_requirements(src, interpreter)
 
 
 @dataclass

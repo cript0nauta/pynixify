@@ -214,7 +214,7 @@ async def _main_async(
         all_requirements.append(Requirement(req_))
 
     await asyncio.gather(*(
-        version_chooser.require(req)
+        version_chooser.require(req, interpreter)
         for req in all_requirements
     ))
 
@@ -229,13 +229,13 @@ async def _main_async(
     async def write_package_expression(package: PyPIPackage):
         reqs: ChosenPackageRequirements
         reqs = ChosenPackageRequirements.from_package_requirements(
-            await evaluate_package_requirements(package),
+            await evaluate_package_requirements(package, extra_args=[interpreter]),
             version_chooser=version_chooser,
             load_tests=version_chooser.should_load_tests(package.pypi_name),
         )
 
         sha256 = await get_path_hash(await package.source())
-        meta = await package.metadata()
+        meta = await package.metadata(interpreter)
         version = await load_nixpkgs_version()
         try:
             (pname, ext) = await get_pypi_data(

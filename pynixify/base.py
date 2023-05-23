@@ -37,7 +37,7 @@ class Package:
     def attr(self) -> str:
         raise NotImplementedError()
 
-    async def metadata(self) -> PackageMetadata:
+    async def metadata(self, interpreter) -> PackageMetadata:
         from pynixify.package_requirements import run_nix_build, NixBuildError
         source = await self.source()
         if source.name.endswith('.whl'):
@@ -56,7 +56,10 @@ class Package:
             '--no-build-output',
             '--arg',
             'file',
-            str(source.resolve())
+            str(source.resolve()),
+            '--arg',
+            'python',
+            "(import <nixpkgs> { }).%s" % interpreter
         )
         if (nix_store_path / 'failed').exists():
             print(f'Error parsing metadata of {source}. Assuming it has no metadata.')
