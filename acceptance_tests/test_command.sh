@@ -149,3 +149,10 @@ teardown(){
     in python.pkgs.sampleproject'
     ./result/bin/sample | grep 'Call your main'
 }
+
+@test "celery" {
+    # kombu==5.2.4 has requirement pytz>dev, which breaks the requirements parser
+    pynixify 'kombu>5.2.4' celery
+    nix-build pynixify/nixpkgs.nix -A python3.pkgs.celery
+    ./result/bin/celery --version
+}
