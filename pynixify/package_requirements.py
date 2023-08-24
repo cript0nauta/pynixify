@@ -45,7 +45,7 @@ class PackageRequirements:
         return cls(**kwargs)
 
 
-async def eval_path_requirements(path: Path) -> PackageRequirements:
+async def eval_path_requirements(path: Path, interpreter: str) -> PackageRequirements:
     nix_expression_path = Path(__file__).parent / "data" / "parse_setuppy_data.nix"
     if path.name.endswith('.whl'):
         # Some nixpkgs packages use a wheel as source, which don't have a
@@ -64,7 +64,10 @@ async def eval_path_requirements(path: Path) -> PackageRequirements:
         '--no-build-output',
         '--arg',
         'file',
-        str(path.resolve())
+        str(path.resolve()),
+        '--arg',
+        'python',
+        "(import <nixpkgs> { }).%s" % interpreter
     )
     if (nix_store_path / 'failed').exists():
         print(f'Error parsing requirements of {path}. Assuming it has no dependencies.')
