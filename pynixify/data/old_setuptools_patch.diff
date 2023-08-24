@@ -2,8 +2,8 @@ diff --git a/setuptools/__init__.py b/setuptools/__init__.py
 index 83882511..259effd5 100644
 --- a/setuptools/__init__.py
 +++ b/setuptools/__init__.py
-@@ -155,14 +155,63 @@ def _install_setup_requires(attrs):
- 
+@@ -155,14 +155,64 @@ def _install_setup_requires(attrs):
+
      # Honor setup.cfg's options.
      dist.parse_config_files(ignore_option_errors=True)
 -    if dist.setup_requires:
@@ -56,6 +56,7 @@ index 83882511..259effd5 100644
 +        meta_attrs = {'description', 'url', 'license', 'version'}
 +        for meta_attr in meta_attrs:
 +            meta[meta_attr] = attrs.get(meta_attr)
++        meta['_fmt'] = 'setuptools'
 +        with (out / 'meta.json').open('w') as fp:
 +            json.dump(meta, fp)
 +    else:
@@ -69,6 +70,6 @@ index 83882511..259effd5 100644
 -    return distutils.core.setup(**attrs)
 +    if 'PYNIXIFY' not in os.environ:
 +        return distutils.core.setup(**attrs)
- 
- 
+
+
  setup.__doc__ = distutils.core.setup.__doc__

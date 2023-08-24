@@ -1,0 +1,88 @@
+diff --git a/src/hatchling/build.py b/src/hatchling/build.py
+index d79c1e2e..c85a837e 100644
+--- a/src/hatchling/build.py
++++ b/src/hatchling/build.py
+@@ -1,6 +1,20 @@
+ import os
+
+
++def _write_pynixify_files(config_settings, deps):
++    if config_settings is not None and "PYNIXIFY_OUT" in config_settings:
++        from pathlib import Path
++        import json
++        pynix_out = Path(config_settings['PYNIXIFY_OUT'])
++        for target in ("tests", "setup", "install"):
++            fp = (pynix_out / ("%s_requires.txt" % target)).open("w")
++            fp.write('\n'.join([str(req) for req in deps]))
++            fp.write('\nhatchling\nhatch-vcs')
++            fp.close()
++        with (pynix_out / 'meta.json').open('w') as fp:
++            json.dump({"version": None, "url": None, "license": None, "description": None}, fp)
++
++
+ def get_requires_for_build_sdist(config_settings=None):
+     """
+     https://peps.python.org/pep-0517/#get-requires-for-build-sdist
+@@ -8,6 +22,7 @@ def get_requires_for_build_sdist(config_settings=None):
+     from hatchling.builders.sdist import SdistBuilder
+
+     builder = SdistBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return builder.config.dependencies
+
+
+@@ -18,6 +33,7 @@ def build_sdist(sdist_directory, config_settings=None):
+     from hatchling.builders.sdist import SdistBuilder
+
+     builder = SdistBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return os.path.basename(next(builder.build(sdist_directory, ['standard'])))
+
+
+@@ -28,6 +44,7 @@ def get_requires_for_build_wheel(config_settings=None):
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return builder.config.dependencies
+
+
+@@ -38,6 +55,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return os.path.basename(next(builder.build(wheel_directory, ['standard'])))
+
+
+@@ -48,6 +66,7 @@ def get_requires_for_build_editable(config_settings=None):
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return builder.config.dependencies
+
+
+@@ -58,6 +77,7 @@ def build_editable(wheel_directory, config_settings=None, metadata_directory=Non
+     from hatchling.builders.wheel import WheelBuilder
+
+     builder = WheelBuilder(os.getcwd())
++    _write_pynixify_files(config_settings, builder.config.dependencies)
+     return os.path.basename(next(builder.build(wheel_directory, ['editable'])))
+
+
+@@ -89,6 +109,7 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
+
+         with open(os.path.join(directory, 'METADATA'), 'w', encoding='utf-8') as f:
+             f.write(builder.config.core_metadata_constructor(builder.metadata))
++        _write_pynixify_files(config_settings, builder.config.dependencies)
+
+         return os.path.basename(directory)
+
+@@ -110,5 +131,6 @@ if 'PIP_BUILD_TRACKER' not in os.environ:
+
+         with open(os.path.join(directory, 'METADATA'), 'w', encoding='utf-8') as f:
+             f.write(builder.config.core_metadata_constructor(builder.metadata, extra_dependencies=extra_dependencies))
++        _write_pynixify_files(config_settings, builder.config.dependencies)
+
+         return os.path.basename(directory)
